@@ -1,6 +1,6 @@
 # KI-Modellvergleich
 
-> [!INFO]
+> [!NOTE]
 > Ziel ist ein Überblick über die gängigsten KI-Modelle zum aktuellen Stand (Dezember 2025).
 
 ## KI-Prompt
