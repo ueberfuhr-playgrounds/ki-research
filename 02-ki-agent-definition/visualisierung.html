@@ -294,47 +294,47 @@
                             action: "Arbeitstag beginnen"
                         },
                         {
-                            text: "Posteingang: 'Ding!'. Statusfrage zu #123. Der Agent wartet auf Anweisungen.",
+                            text: "Automatik: 'Ding!'. Der Agent überwacht den Posteingang und reagiert sofort automatisch auf die Anfrage zu #123.",
                             userPos: 'desk',
                             agentPos: 'ai',
                             showAgent: true,
                             bubble: "Ding! Mail.",
-                            action: "Aufgabe delegieren"
+                            action: "Agent startet automatisch"
                         },
                         {
-                            text: "Delegation: Du gehst direkt zur Agenten-Basis und gibst die Anweisung in einem Rutsch.",
-                            userPos: 'ai', // User geht zum Agenten
-                            agentPos: 'ai',
+                            text: "Analyse: Der Agent greift auf Outlook zu, liest die Mail und extrahiert die Bestellnummer #123.",
+                            userPos: 'desk', // User bleibt sitzen
+                            agentPos: 'email',
                             showAgent: true,
-                            bubble: "Agent, gib Auskunft zum Status zu #123",
-                            action: "Agent losschicken"
+                            bubble: "Agent: Lese Mail... Aha, #123.",
+                            action: "Daten recherchieren"
                         },
                         {
-                            text: "Aktion 1: Der Agent startet von seiner Basis zum System. Du gehst entspannt zurück zum Platz.",
-                            userPos: 'desk', // User geht zurück
-                            agentPos: 'system', // Agent startet von der Basis zum System
+                            text: "Recherche: Der Agent prüft selbstständig den Status im ERP. Du bekommst davon gar nichts mit und arbeitest weiter.",
+                            userPos: 'desk', // User bleibt sitzen
+                            agentPos: 'system',
                             showAgent: true,
-                            bubble: "Agent: Lese Status... Versandt.",
-                            action: "Agent arbeitet weiter"
+                            bubble: "Agent: Suche #123... Versandt.",
+                            action: "Entwurf erstellen"
                         },
                         {
-                            text: "Aktion 2: Der Agent hat den Entwurf erstellt, wartet aber sicherheitshalber auf deine Freigabe ('Human in the Loop').",
+                            text: "Entwurf & Human-in-the-Loop: Der Agent erstellt den Entwurf und benachrichtigt dich erst jetzt zur Freigabe.",
                             userPos: 'desk',
-                            agentPos: 'email', // Agent läuft weiter
+                            agentPos: 'email', // Agent ist beim Email System
                             showAgent: true,
                             bubble: "Agent: Entwurf fertig. Senden?",
                             action: "Überprüfen"
                         },
                         {
-                            text: "Feedback: Du prüfst den Entwurf kurz und gibst dem Agenten für die Zukunft mehr Autonomie.",
+                            text: "Feedback: Du prüfst den Entwurf kurz. Da der Agent den Kontext kennt, passt alles.",
                             userPos: 'desk',
                             agentPos: 'email',
                             showAgent: true,
-                            bubble: "Passt, frag beim nächsten Mal nicht mehr nach.",
+                            bubble: "Passt, senden!",
                             action: "Freigabe erteilen"
                         },
                         {
-                            text: "Aktion 3: Der Agent sendet die E-Mail nun final ab.",
+                            text: "Aktion: Der Agent sendet die E-Mail nun final ab.",
                             userPos: 'desk',
                             agentPos: 'email',
                             showAgent: true,
@@ -350,7 +350,7 @@
                             action: "Abschluss"
                         },
                         {
-                            text: "Fertig. Maximale Effizienz durch System-Integration.",
+                            text: "Fertig. Maximale Effizienz durch Automatisierung.",
                             userPos: 'desk',
                             agentPos: 'ai',
                             showAgent: true,
@@ -523,7 +523,7 @@
                                 </div>
                             )}
                             {/* Special Bubble for User when Agent is present (Stage 3) */}
-                            {currentStepData.bubble && currentStepData.showAgent && !currentStepData.bubble.startsWith("Agent") && (
+                            {currentStepData.bubble && currentStepData.showAgent && !currentStepData.bubble.startsWith("Agent") && !currentStepData.bubble.startsWith("System") && !currentStepData.bubble.startsWith("Ding") && (
                                 <div className="absolute bottom-14 w-48 bg-slate-800 p-3 rounded-xl shadow-2xl border border-slate-600 text-xs text-center animate-bounce text-slate-200">
                                     {currentStepData.bubble}
                                     <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
@@ -544,7 +544,7 @@
                                     <Bot size={24} />
                                 </div>
                                 {/* Agent Bubble */}
-                                {currentStepData.bubble && (currentStepData.bubble.startsWith("Agent") || currentStepData.bubble.startsWith("System")) && (
+                                {currentStepData.bubble && (currentStepData.bubble.startsWith("Agent") || currentStepData.bubble.startsWith("System") || currentStepData.bubble.startsWith("Ding")) && (
                                     <div className="absolute bottom-14 w-48 bg-purple-900 p-3 rounded-xl shadow-2xl border border-purple-500 text-xs text-center font-semibold text-purple-100 animate-pulse">
                                         {currentStepData.bubble}
                                         <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-purple-900 border-r border-b border-purple-500 rotate-45"></div>
