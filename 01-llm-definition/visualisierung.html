@@ -4,54 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KI Verstehen: Interaktive Lernreise</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <title>Simulation: Vom LLM zum KI-Agenten</title>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Babel für JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0f172a;
-            color: #e2e8f0;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .bar-transition {
-            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s;
-        }
-
-        /* Scrollbar styling for dark theme */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #1e293b;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #475569;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
+            margin: 0;
+            overflow: hidden;
         }
     </style>
 </head>
@@ -60,10 +28,10 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState } = React;
 
-        // --- ICONS ---
-        const Icon = ({ children, size = 24, className = "" }) => (
+        // --- Custom Icons Components (Ersatz für lucide-react, um CDN Fehler zu vermeiden) ---
+        const IconBase = ({ children, size = 24, className = "" }) => (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width={size}
@@ -80,514 +48,547 @@
             </svg>
         );
 
-        const ArrowRight = (props) => <Icon {...props}><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></Icon>;
-        const ArrowLeft = (props) => <Icon {...props}><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></Icon>;
-        const Brain = (props) => <Icon {...props}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" /><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" /></Icon>;
-        const RefreshCcw = (props) => <Icon {...props}><path d="M3 2v6h6" /><path d="M21 12A9 9 0 0 0 6 5.3L3 8" /><path d="M21 22v-6h-6" /><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7" /></Icon>;
-        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>;
-        const AlertTriangle = (props) => <Icon {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></Icon>;
-        const Copy = (props) => <Icon {...props}><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></Icon>;
-        const MousePointerClick = (props) => <Icon {...props}><path d="M14 4.1 12 6" /><path d="m5.1 8-2.9-.8" /><path d="m6 12-1.9 2" /><path d="M7.2 2.2 8 5.1" /><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z" /></Icon>;
-        const Play = (props) => <Icon {...props}><polygon points="5 3 19 12 5 21 5 3" /></Icon>;
-
-        // --- KOMPONENTEN ---
-
-        // 1. Intro Slide
-        const IntroSlide = ({ onNext }) => (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 fade-in text-slate-200">
-                <div className="bg-blue-600 text-white p-6 rounded-full mb-8 shadow-[0_0_30px_rgba(37,99,235,0.5)]">
-                    <Brain size={80} />
-                </div>
-                <h1 className="text-5xl font-bold mb-6 tracking-tight">Wie "denkt" die KI?</h1>
-                <p className="text-xl text-slate-400 mb-12 max-w-2xl leading-relaxed">
-                    Willkommen zur interaktiven Reise in das Gehirn eines Large Language Models.
-                    Entdecke Schritt für Schritt, wie es lernt, spricht und halluziniert.
-                </p>
-                <button onClick={onNext} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition transform hover:scale-105 flex items-center gap-3 text-lg">
-                    Lernreise starten <ArrowRight size={24} />
-                </button>
-            </div>
+        const User = (props) => (
+            <IconBase {...props}>
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+            </IconBase>
         );
 
-        // 2. Training Slide
-        const TrainingSlide = () => {
-            const [step, setStep] = useState(0); // 0=Initial, 1-3=Learning Stages, 4=Done
+        const Mail = (props) => (
+            <IconBase {...props}>
+                <rect width="20" height="16" x="2" y="4" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </IconBase>
+        );
 
-            const learningStages = [
-                // Stage 0: Untrained
-                [
-                    { word: "Banane", value: 60, color: "bg-red-500" },
-                    { word: "Katze", value: 10, color: "bg-emerald-600" },
-                    { word: "Postbotin", value: 15, color: "bg-blue-500" },
-                    { word: "Wolke", value: 15, color: "bg-slate-500" }
-                ],
-                // Stage 1
-                [
-                    { word: "Banane", value: 45, color: "bg-red-400" },
-                    { word: "Katze", value: 25, color: "bg-emerald-600" },
-                    { word: "Postbotin", value: 20, color: "bg-blue-500" },
-                    { word: "Wolke", value: 10, color: "bg-slate-500" }
-                ],
-                // Stage 2
-                [
-                    { word: "Banane", value: 20, color: "bg-red-400" },
-                    { word: "Katze", value: 55, color: "bg-emerald-600" },
-                    { word: "Postbotin", value: 20, color: "bg-blue-500" },
-                    { word: "Wolke", value: 5, color: "bg-slate-500" }
-                ],
-                // Stage 3 (Final)
-                [
-                    { word: "Banane", value: 2, color: "bg-slate-600" },
-                    { word: "Katze", value: 88, color: "bg-emerald-500" },
-                    { word: "Postbotin", value: 8, color: "bg-blue-500" },
-                    { word: "Wolke", value: 2, color: "bg-slate-600" }
-                ]
-            ];
+        const Database = (props) => (
+            <IconBase {...props}>
+                <ellipse cx="12" cy="5" rx="9" ry="3" />
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+            </IconBase>
+        );
 
-            const currentWeights = learningStages[step > 3 ? 3 : step];
+        const Brain = (props) => (
+            <IconBase {...props}>
+                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
+                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
+            </IconBase>
+        );
 
-            // Logik: Finde das Wort mit der höchsten Wahrscheinlichkeit
-            const topPrediction = currentWeights.reduce((prev, current) => (prev.value > current.value) ? prev : current);
+        const Bot = (props) => (
+            <IconBase {...props}>
+                <rect width="18" height="10" x="3" y="11" rx="2" />
+                <circle cx="12" cy="5" r="2" />
+                <path d="M12 7v4" />
+                <line x1="8" x2="8" y1="16" y2="16" />
+                <line x1="16" x2="16" y1="16" y2="16" />
+            </IconBase>
+        );
 
-            const trainStep = () => {
-                if (step < 3) {
-                    setStep(step + 1);
-                } else {
-                    setStep(4);
+        const ArrowRight = (props) => (
+            <IconBase {...props}>
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+            </IconBase>
+        );
+
+        const CheckCircle = (props) => (
+            <IconBase {...props}>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+            </IconBase>
+        );
+
+        const Monitor = (props) => (
+            <IconBase {...props}>
+                <rect width="20" height="14" x="2" y="3" rx="2" />
+                <line x1="8" x2="16" y1="21" y2="21" />
+                <line x1="12" x2="12" y1="17" y2="21" />
+            </IconBase>
+        );
+
+        const Play = (props) => (
+            <IconBase {...props}>
+                <polygon points="5 3 19 12 5 21 5 3" />
+            </IconBase>
+        );
+
+        const Settings = (props) => (
+            <IconBase {...props}>
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                <circle cx="12" cy="12" r="3" />
+            </IconBase>
+        );
+
+        const App = () => {
+            const [hasStarted, setHasStarted] = useState(false);
+            const [activeTab, setActiveTab] = useState(1);
+            const [step, setStep] = useState(0);
+            const [isAnimating, setIsAnimating] = useState(false);
+
+            // Definition der Positionen auf dem Spielfeld (in Prozent)
+            const positions = {
+                desk: { top: '70%', left: '50%' },     // User Schreibtisch (Mitte unten)
+                system: { top: '20%', left: '20%' },   // ERP / Excel (Links oben)
+                email: { top: '20%', left: '80%' },    // Outlook (Rechts oben)
+                ai: { top: '70%', left: '85%' },       // ChatGPT / Agent (Rechts unten)
+            };
+
+            // Szenarien Konfiguration
+            const scenarios = {
+                1: {
+                    title: "Stufe 1: Manuell",
+                    description: "Der User macht alles selbst. Hoher manueller Aufwand.",
+                    steps: [
+                        {
+                            text: "Start: Du sitzt arbeitsbereit an deinem Schreibtisch.",
+                            userPos: 'desk',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            action: "Arbeitstag beginnen"
+                        },
+                        {
+                            text: "Posteingang: Eine neue Kunden-Email ist eingegangen!",
+                            userPos: 'desk',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            bubble: "Ding! Neue Mail.",
+                            action: "Email lesen"
+                        },
+                        {
+                            text: "Outlook: Du liest die E-Mail. Der Kunde schreibt: 'Wo bleibt meine Bestellung #123?'.",
+                            userPos: 'email',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            bubble: "Kunde: Wo ist #123?",
+                            action: "Zum ERP laufen"
+                        },
+                        {
+                            text: "Recherche: Du stehst am ERP-System und prüfst den Status.",
+                            userPos: 'system',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            bubble: "Suche #123... Ah, Status: Versandt!",
+                            action: "Direkt zu Outlook"
+                        },
+                        {
+                            text: "Medienbruch: Mit dem Status im Kopf ('Versandt') gehst du direkt rüber zu Outlook.",
+                            userPos: 'email',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            action: "Antwort tippen"
+                        },
+                        {
+                            text: "Manuelle Arbeit: Du tippst mühsam: 'Sehr geehrter Kunde...'",
+                            userPos: 'email',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            bubble: "Tipp tipp tipp... (Puh, anstrengend)",
+                            action: "Senden"
+                        },
+                        {
+                            text: "Fertig. Viel Laufarbeit, hohe Fehleranfälligkeit.",
+                            userPos: 'desk',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            isDone: true,
+                            action: "Abschluss"
+                        }
+                    ]
+                },
+                2: {
+                    title: "Stufe 2: Mit LLM",
+                    description: "Der User nutzt KI zum Texten, ist aber der 'Daten-Kurier'.",
+                    steps: [
+                        {
+                            text: "Start: Du bist bereit, KI als Hilfsmittel zu nutzen.",
+                            userPos: 'desk',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            action: "Arbeitstag beginnen"
+                        },
+                        {
+                            text: "Posteingang: Eine neue E-Mail kommt rein. Du weißt noch nicht, worum es geht.",
+                            userPos: 'desk',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            bubble: "Ding! Neue Mail.",
+                            action: "Email lesen"
+                        },
+                        {
+                            text: "Outlook: Du liest die E-Mail. Der Kunde schreibt: 'Wo bleibt meine Bestellung #123?'.",
+                            userPos: 'email',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            bubble: "Kunde: Wo ist #123?",
+                            action: "Zum ERP laufen"
+                        },
+                        {
+                            text: "Recherche: Du suchst den Status manuell im System.",
+                            userPos: 'system',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            bubble: "Status: Versandt. (Merken!)",
+                            action: "Direkt zu ChatGPT"
+                        },
+                        {
+                            text: "Prompting: Mit den Fakten im Kopf wechselst du zu ChatGPT. Du musst Rolle, Format und die Daten eingeben.",
+                            userPos: 'ai', // User interagiert mit AI
+                            agentPos: 'ai',
+                            showAgent: false,
+                            bubble: "Prompt: '...Bestellung #123 ist versandt...'",
+                            action: "Prompt schreiben"
+                        },
+                        {
+                            text: "Generierung: Die KI liefert den perfekten Text. Du kopierst ihn.",
+                            userPos: 'ai',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            bubble: "Text kopiert!",
+                            action: "Text kopieren"
+                        },
+                        {
+                            text: "Transfer: Du trägst den Text rüber zu Outlook.",
+                            userPos: 'email',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            bubble: "Einfügen & Senden",
+                            action: "Zu Outlook & Senden"
+                        },
+                        {
+                            text: "Fertig. Text war gut, aber du warst die Schnittstelle.",
+                            userPos: 'desk',
+                            agentPos: 'ai',
+                            showAgent: false,
+                            isDone: true,
+                            action: "Abschluss"
+                        }
+                    ]
+                },
+                3: {
+                    title: "Stufe 3: Mit KI-Agent",
+                    description: "Der User delegiert. Der Agent bewegt sich und nutzt Tools.",
+                    steps: [
+                        {
+                            text: "Vorbereitung: Der neue KI-Agent steht bereit. Bevor wir arbeiten, müssen wir ihn einmalig instruieren.",
+                            userPos: 'desk', // User startet am Schreibtisch
+                            agentPos: 'ai',
+                            showAgent: true,
+                            action: "Agenten präparieren"
+                        },
+                        {
+                            text: "Konfiguration: Du definierst den 'System Prompt': Rolle, Tonalität und Regeln.",
+                            userPos: 'ai', // User geht zum Agenten
+                            agentPos: 'ai',
+                            showAgent: true,
+                            bubble: "System: 'Sei höflich. Nutze ERP bei Fragen.'",
+                            action: "Einstellung speichern"
+                        },
+                        {
+                            text: "Start: Der Arbeitstag beginnt. Du gehst zurück an deinen Platz, der Agent ist bereit.",
+                            userPos: 'desk', // User geht zurück
+                            agentPos: 'ai', // Agent wartet an der Basis
+                            showAgent: true,
+                            action: "Arbeitstag beginnen"
+                        },
+                        {
+                            text: "Posteingang: 'Ding!'. Statusfrage zu #123. Der Agent wartet auf Anweisungen.",
+                            userPos: 'desk',
+                            agentPos: 'ai',
+                            showAgent: true,
+                            bubble: "Ding! Mail.",
+                            action: "Aufgabe delegieren"
+                        },
+                        {
+                            text: "Delegation: Du gehst direkt zur Agenten-Basis und gibst die Anweisung in einem Rutsch.",
+                            userPos: 'ai', // User geht zum Agenten
+                            agentPos: 'ai',
+                            showAgent: true,
+                            bubble: "Agent, gib Auskunft zum Status zu #123",
+                            action: "Agent losschicken"
+                        },
+                        {
+                            text: "Aktion 1: Der Agent startet von seiner Basis zum System. Du gehst entspannt zurück zum Platz.",
+                            userPos: 'desk', // User geht zurück
+                            agentPos: 'system', // Agent startet von der Basis zum System
+                            showAgent: true,
+                            bubble: "Agent: Lese Status... Versandt.",
+                            action: "Agent arbeitet weiter"
+                        },
+                        {
+                            text: "Aktion 2: Der Agent hat den Entwurf erstellt, wartet aber sicherheitshalber auf deine Freigabe ('Human in the Loop').",
+                            userPos: 'desk',
+                            agentPos: 'email', // Agent läuft weiter
+                            showAgent: true,
+                            bubble: "Agent: Entwurf fertig. Senden?",
+                            action: "Überprüfen"
+                        },
+                        {
+                            text: "Feedback: Du prüfst den Entwurf kurz und gibst dem Agenten für die Zukunft mehr Autonomie.",
+                            userPos: 'desk',
+                            agentPos: 'email',
+                            showAgent: true,
+                            bubble: "Passt, frag beim nächsten Mal nicht mehr nach.",
+                            action: "Freigabe erteilen"
+                        },
+                        {
+                            text: "Aktion 3: Der Agent sendet die E-Mail nun final ab.",
+                            userPos: 'desk',
+                            agentPos: 'email',
+                            showAgent: true,
+                            bubble: "Agent: Gesendet.",
+                            action: "Agent berichtet"
+                        },
+                        {
+                            text: "Bericht: Der Agent kehrt zur Basis zurück und meldet Erfolg.",
+                            userPos: 'desk',
+                            agentPos: 'ai', // Agent geht zurück zur Basis
+                            showAgent: true,
+                            bubble: "Agent: Erledigt!",
+                            action: "Abschluss"
+                        },
+                        {
+                            text: "Fertig. Maximale Effizienz durch System-Integration.",
+                            userPos: 'desk',
+                            agentPos: 'ai',
+                            showAgent: true,
+                            isDone: true,
+                            action: "Abschluss"
+                        }
+                    ]
                 }
             };
 
-            const reset = () => {
+            const currentScenario = scenarios[activeTab];
+            const currentStepData = currentScenario.steps[step];
+
+            const handleNext = () => {
+                if (step < currentScenario.steps.length - 1) {
+                    setIsAnimating(true);
+                    setStep(step + 1);
+                    setTimeout(() => setIsAnimating(false), 600);
+                }
+            };
+
+            const handleTabChange = (tabId) => {
+                setActiveTab(tabId);
                 setStep(0);
             };
 
-            return (
-                <div className="flex flex-col h-full p-6 fade-in max-w-4xl mx-auto w-full text-slate-200">
-                    <h2 className="text-3xl font-bold mb-2 text-blue-400">Phase 1: Das Training</h2>
-                    <p className="text-slate-400 mb-8 text-lg">Das interne Wissen der KI (Wahrscheinlichkeiten) passt sich durch Wiederholung an.</p>
+            // Helper zum Berechnen der Position basierend auf dem String-Key
+            const getPosStyle = (posKey) => {
+                const p = positions[posKey];
+                return { top: p.top, left: p.left };
+            };
 
-                    <div className="bg-slate-800 rounded-xl shadow-2xl p-8 border border-slate-700 mb-8">
-                        <div className="text-4xl font-mono text-center mb-10">
-                            "Der Hund jagt die <span className="border-b-4 border-blue-500 px-2 inline-block min-w-[150px] text-blue-300">
-                                {step === 0 ? '???' :
-                                    <span className={topPrediction.word === 'Katze' ? "text-emerald-400 font-bold" : "text-red-400"}>
-                                        {topPrediction.word}
-                                    </span>
-                                }
-                            </span>"
-                        </div>
+            // Start Screen Component
+            if (!hasStarted) {
+                return (
+                    <div className="flex flex-col h-screen bg-slate-950 font-sans text-slate-100 items-center justify-center p-4">
+                        <div className="max-w-2xl w-full bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 p-8 text-center relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-purple-600"></div>
 
-                        <div className="space-y-4">
-                            <p className="text-sm text-slate-500 font-semibold uppercase tracking-wider mb-2">Aktuelle Wahrscheinlichkeiten im KI-Gehirn:</p>
-                            {currentWeights.map((w, idx) => (
-                                <div key={idx} className="flex items-center gap-4 group">
-                                    <span className={`w-24 text-right font-medium ${w.value > 50 ? 'text-white' : 'text-slate-400'}`}>{w.word}</span>
-                                    <div className="flex-1 bg-slate-700 rounded-full h-8 overflow-hidden relative shadow-inner">
-                                        <div
-                                            className={`h-full bar-transition ${w.color}`}
-                                            style={{ width: `${w.value}%` }}
-                                        ></div>
-                                        <span className="absolute inset-0 flex items-center justify-end px-3 text-xs font-bold text-slate-900 opacity-60">{w.value}%</span>
-                                    </div>
-                                </div>
-                            ))}
+                            <div className="flex justify-center mb-6 space-x-4">
+                                <Monitor size={48} className="text-blue-400" />
+                                <ArrowRight size={48} className="text-slate-600" />
+                                <Bot size={48} className="text-purple-400" />
+                            </div>
+
+                            <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                                Vom LLM zum KI-Agenten
+                            </h1>
+
+                            <p className="text-xl text-slate-300 mb-8 leading-relaxed">
+                                Erlebe in dieser interaktiven Simulation, wie sich die Arbeit verändert:
+                                Vom stressigen manuellen "Turnschuh-Admin" zum effizienten KI-Manager.
+                            </p>
+
+                            <div className="bg-slate-800 rounded-xl p-6 mb-8 text-left border border-slate-700">
+                                <h3 className="text-lg font-semibold text-slate-200 mb-2">Das Szenario:</h3>
+                                <p className="text-slate-400">
+                                    Ein Kunde fragt per E-Mail nach dem Status seiner Bestellung <span className="text-blue-400 font-mono">#123</span>.
+                                    Der Status ist im internen ERP-System zu finden.
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={() => setHasStarted(true)}
+                                className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-blue-600 rounded-full hover:bg-blue-500 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 focus:ring-offset-slate-900"
+                            >
+                                <Play className="mr-2 fill-current" size={20} />
+                                Simulation starten
+                            </button>
                         </div>
                     </div>
-
-                    <div className="text-center h-24 flex flex-col items-center justify-center">
-                        {step < 3 ? (
-                            <div className="space-y-2">
-                                <button onClick={trainStep} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl shadow-lg font-bold flex items-center gap-2 mx-auto transition active:scale-95">
-                                    <Brain size={20} />
-                                    {step === 0 ? "Training starten (1. Durchlauf)" :
-                                        topPrediction.word === 'Katze' ? "Weiter trainieren (Vertiefen)" : "Weiter trainieren & anpassen"}
-                                </button>
-                                {step > 0 && <p className="text-sm text-slate-500">
-                                    {topPrediction.word === 'Katze' ? "Das Modell hat es verstanden, aber wir trainieren weiter für mehr Sicherheit." : "Klicke erneut, um das Modell zu verbessern."}
-                                </p>}
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center gap-4 fade-in">
-                                <div className="text-emerald-400 font-bold text-xl flex items-center justify-center gap-2 bg-slate-800/50 px-6 py-2 rounded-full border border-emerald-500/30">
-                                    <CheckCircle /> Training abgeschlossen!
-                                </div>
-                                <button onClick={reset} className="text-slate-500 hover:text-blue-400 text-sm flex items-center gap-1 transition">
-                                    <RefreshCcw size={14} /> Zurücksetzen
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        };
-
-        // 3. Probabilities Slide (Hallucination)
-        const ProbabilitySlide = () => {
-            const [selectedWord, setSelectedWord] = useState(null);
-
-            const words = [
-                { text: "Katze", type: "standard", prob: "80%", desc: "Die logische Wahl." },
-                { text: "Postbotin", type: "creative", prob: "15%", desc: "Kreativ! Macht die Geschichte spannend." },
-                { text: "Bratpfanne", type: "hallucination", prob: "5%", desc: "Halluzination. Grammatikalisch korrekt, inhaltlich Unsinn." }
-            ];
+                );
+            }
 
             return (
-                <div className="flex flex-col h-full p-6 fade-in max-w-4xl mx-auto w-full text-slate-200">
-                    <h2 className="text-3xl font-bold mb-2 text-blue-400">Phase 2: Die Auswahl</h2>
-                    <p className="text-slate-400 mb-6 text-lg">
-                        Die KI würfelt das nächste Wort. Kreativität entsteht, wenn wir unwahrscheinlichere Pfade wählen.
-                    </p>
+                <div className="flex flex-col h-screen bg-slate-950 font-sans text-slate-200">
 
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-6 flex items-center gap-3 text-yellow-200">
-                        <MousePointerClick size={20} />
-                        <span className="font-semibold">Klicke unten auf eines der Wörter, um den Satz zu beenden!</span>
-                    </div>
+                    {/* Header */}
+                    <div className="bg-slate-900 shadow-md border-b border-slate-800 p-4 z-10">
+                        <div className="flex justify-between items-center mb-4">
+                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                                Simulation: KI-Workflow
+                            </h1>
+                            <button onClick={() => setHasStarted(false)} className="text-xs text-slate-500 hover:text-slate-300">Zur Startseite</button>
+                        </div>
 
-                    <div className="bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
-                        <p className="text-3xl mb-8 text-center font-mono">"Der Hund jagt die ..."</p>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            {words.map((w, idx) => (
+                        <div className="flex space-x-2">
+                            {[1, 2, 3].map((num) => (
                                 <button
-                                    key={idx}
-                                    onClick={() => setSelectedWord(w)}
-                                    className={`p-6 rounded-xl border-2 text-left transition transform hover:-translate-y-1 hover:shadow-xl relative overflow-hidden group ${selectedWord === w
-                                            ? 'border-blue-500 bg-blue-900/30 ring-2 ring-blue-500/50'
-                                            : 'border-slate-600 bg-slate-700/50 hover:border-blue-400 hover:bg-slate-700'
+                                    key={num}
+                                    onClick={() => handleTabChange(num)}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === num
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
+                                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200 border border-slate-700'
                                         }`}
                                 >
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="font-bold text-xl text-white">{w.text}</span>
-                                        <span className="text-xs bg-slate-900 text-slate-300 px-2 py-1 rounded border border-slate-600 font-mono">{w.prob}</span>
-                                    </div>
-                                    <div className="text-sm text-slate-400 group-hover:text-slate-300">{w.type === 'standard' ? 'Standard' : w.type === 'creative' ? 'Kreativ' : 'Halluzination'}</div>
+                                    {scenarios[num].title}
                                 </button>
                             ))}
                         </div>
+                        <p className="mt-4 text-slate-400 text-sm border-l-2 border-blue-500 pl-3 italic">
+                            {currentScenario.description}
+                        </p>
+                    </div>
 
-                        <div className="min-h-[140px]">
-                            {selectedWord && (
-                                <div className={`p-6 rounded-xl border-l-4 fade-in ${selectedWord.type === 'standard' ? 'bg-emerald-900/20 border-emerald-500' :
-                                        selectedWord.type === 'creative' ? 'bg-blue-900/20 border-blue-500' :
-                                            'bg-red-900/20 border-red-500'
-                                    }`}>
-                                    <h3 className="font-bold text-xl mb-2 flex items-center gap-2 text-white">
-                                        {selectedWord.type === 'hallucination' && <AlertTriangle size={24} className="text-red-500" />}
-                                        Ergebnis: "Der Hund jagt die <span className="underline decoration-2 underline-offset-4">{selectedWord.text}</span>."
-                                    </h3>
-                                    <p className="text-slate-300 text-lg leading-relaxed">{selectedWord.desc}</p>
-                                    {selectedWord.type === 'hallucination' && (
-                                        <p className="text-red-400 text-sm mt-3 font-semibold bg-red-950/50 p-2 rounded">
-                                            ⚠️ Achtung: So entstehen falsche Fakten! Es klingt grammatikalisch richtig, ist aber inhaltlich falsch.
-                                        </p>
-                                    )}
-                                </div>
-                            )}
+                    {/* Main Game Area */}
+                    <div className="flex-grow relative bg-slate-900 overflow-hidden m-4 rounded-xl border border-slate-700 shadow-2xl">
+
+                        {/* Stations */}
+
+                        {/* User Desk */}
+                        <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '50%' }}>
+                            <div className="w-24 h-24 bg-slate-800 rounded-full border-4 border-slate-600 flex items-center justify-center shadow-lg">
+                                <Monitor size={40} className="text-slate-400" />
+                            </div>
+                            <span className="mt-2 text-sm font-bold text-slate-400 bg-slate-900/90 px-3 py-1 rounded-full border border-slate-700">Dein Schreibtisch</span>
                         </div>
-                    </div>
-                </div>
-            );
-        };
 
-        // 4. Prompting Slide
-        const PromptSlide = () => {
-            const [activeTab, setActiveTab] = useState('bad');
-            const [resultVisible, setResultVisible] = useState(false);
-            const [isGenerating, setIsGenerating] = useState(false);
+                        {/* System / ERP */}
+                        <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '20%', left: '20%' }}>
+                            <div className="w-20 h-20 bg-emerald-900/30 rounded-lg border-4 border-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/20">
+                                <Database size={32} className="text-emerald-500" />
+                            </div>
+                            <span className="mt-2 text-sm font-bold text-emerald-500 bg-slate-900/90 px-3 py-1 rounded-full border border-slate-700">ERP System</span>
+                        </div>
 
-            const handleTabChange = (tab) => {
-                setActiveTab(tab);
-                setResultVisible(false);
-                setIsGenerating(false);
-            };
+                        {/* Email / Outlook */}
+                        <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '20%', left: '80%' }}>
+                            <div className="w-20 h-20 bg-sky-900/30 rounded-lg border-4 border-sky-700 flex items-center justify-center shadow-lg shadow-sky-900/20">
+                                <Mail size={32} className="text-sky-500" />
+                            </div>
+                            <span className="mt-2 text-sm font-bold text-sky-500 bg-slate-900/90 px-3 py-1 rounded-full border border-slate-700">Outlook</span>
+                        </div>
 
-            const generateResponse = () => {
-                setIsGenerating(true);
-                setTimeout(() => {
-                    setIsGenerating(false);
-                    setResultVisible(true);
-                }, 1500);
-            };
-
-            return (
-                <div className="flex flex-col h-full p-6 fade-in max-w-7xl mx-auto w-full text-slate-200">
-                    <h2 className="text-3xl font-bold mb-2 text-blue-400">Phase 3: Der perfekte Prompt</h2>
-                    <p className="text-slate-400 mb-6 text-lg">
-                        Vergleiche die Ergebnisse: Eine ungenaue Anweisung vs. die 4-Bausteine-Methode.
-                    </p>
-
-                    <div className="flex gap-2 mb-0">
-                        <button
-                            onClick={() => handleTabChange('bad')}
-                            className={`px-6 py-3 rounded-t-xl font-bold transition ${activeTab === 'bad' ? 'bg-slate-800 text-red-400 border-t-2 border-x-2 border-slate-700 border-b-0' : 'bg-slate-900 text-slate-500 hover:text-slate-300 border-b-2 border-slate-700'}`}
-                        >
-                            ❌ Schlechter Prompt
-                        </button>
-                        <button
-                            onClick={() => handleTabChange('good')}
-                            className={`px-6 py-3 rounded-t-xl font-bold transition ${activeTab === 'good' ? 'bg-slate-800 text-emerald-400 border-t-2 border-x-2 border-slate-700 border-b-0' : 'bg-slate-900 text-slate-500 hover:text-slate-300 border-b-2 border-slate-700'}`}
-                        >
-                            ✅ Guter Prompt
-                        </button>
-                    </div>
-
-                    <div className="bg-slate-800 rounded-b-xl rounded-tr-xl shadow-2xl border border-slate-700 flex-1 overflow-hidden flex flex-col md:flex-row">
-
-                        {/* LEFT: Input Area */}
-                        <div className="p-6 md:w-[45%] flex flex-col bg-slate-800/50">
-                            <h3 className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-4">Eingabe (Dein Prompt)</h3>
-
-                            <div className="flex-1">
-                                {activeTab === 'bad' ? (
-                                    <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 h-full shadow-inner">
-                                        <p className="font-mono text-lg text-slate-300">"Schreib eine Absage an Herrn Müller."</p>
-                                        <div className="mt-6 p-3 bg-red-900/20 border border-red-900/50 rounded-lg text-red-300 text-sm flex items-start gap-2">
-                                            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                                            <span>Zu wenig Kontext! Die KI muss raten, wie höflich oder detailliert sie sein soll.</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="bg-slate-900 p-5 rounded-xl border border-slate-700 h-full shadow-inner text-sm space-y-2">
-                                        <div className="p-2 bg-purple-900/20 border-l-2 border-purple-500 rounded"><span className="text-purple-300 font-bold uppercase text-xs block mb-1">Rolle</span> Du bist ein freundlicher Personaler.</div>
-                                        <div className="p-2 bg-blue-900/20 border-l-2 border-blue-500 rounded"><span className="text-blue-300 font-bold uppercase text-xs block mb-1">Aufgabe</span> Schreibe eine Absage an Herrn Müller.</div>
-                                        <div className="p-2 bg-yellow-900/20 border-l-2 border-yellow-500 rounded"><span className="text-yellow-300 font-bold uppercase text-xs block mb-1">Kontext</span> Kein Budget mehr, behalten ihn aber im Pool.</div>
-                                        <div className="p-2 bg-emerald-900/20 border-l-2 border-emerald-500 rounded"><span className="text-emerald-300 font-bold uppercase text-xs block mb-1">Format</span> Kurz, wertschätzend, max. 3 Sätze.</div>
+                        {/* AI Station (ChatGPT or Agent Home) - Only visible in Tab 2 & 3 */}
+                        {activeTab !== 1 && (
+                            <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '85%' }}>
+                                <div className={`w-20 h-20 rounded-lg border-4 flex items-center justify-center shadow-lg ${activeTab === 3 ? 'bg-purple-900/30 border-purple-600 shadow-purple-900/20' : 'bg-orange-900/30 border-orange-600 shadow-orange-900/20'}`}>
+                                    {activeTab === 3 ? <Bot size={32} className="text-purple-400" /> : <Brain size={32} className="text-orange-400" />}
+                                </div>
+                                {activeTab === 3 && (step === 1) && (
+                                    <div className="absolute -top-8 animate-bounce text-purple-400">
+                                        <Settings size={24} />
                                     </div>
                                 )}
-                            </div>
-                        </div>
-
-                        {/* MIDDLE: Action Area */}
-                        <div className="flex items-center justify-center p-4 md:w-[10%] bg-slate-800 border-y md:border-y-0 md:border-x border-slate-700">
-                            {!resultVisible && !isGenerating && (
-                                <button
-                                    onClick={generateResponse}
-                                    className={`w-16 h-16 md:w-20 md:h-20 rounded-full shadow-xl flex items-center justify-center transition hover:scale-110 active:scale-95 z-10 ${activeTab === 'bad' ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white ring-4 ring-blue-500/30'
-                                        }`}
-                                    title="An KI senden"
-                                >
-                                    <Play size={32} fill="currentColor" className="ml-1" />
-                                </button>
-                            )}
-                            {isGenerating && (
-                                <div className="w-16 h-16 md:w-20 md:h-20 flex flex-col items-center justify-center rounded-full bg-slate-700 text-blue-400 animate-pulse">
-                                    <Brain size={24} className="animate-bounce" />
-                                </div>
-                            )}
-                            {resultVisible && (
-                                <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-emerald-600/20 text-emerald-500 border border-emerald-500/50">
-                                    <CheckCircle size={32} />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* RIGHT: Output Area */}
-                        <div className="p-6 md:w-[45%] flex flex-col bg-slate-900/30">
-                            <h3 className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-4">KI Antwort</h3>
-
-                            <div className="flex-1 flex items-center justify-center">
-                                {!resultVisible && !isGenerating ? (
-                                    <div className="text-center text-slate-600 opacity-50">
-                                        <div className="inline-block p-4 rounded-full mb-3 border-2 border-dashed border-slate-700">
-                                            <ArrowRight size={30} />
-                                        </div>
-                                        <p>Klicke auf Play zum Generieren</p>
-                                    </div>
-                                ) : isGenerating ? (
-                                    <div className="w-full space-y-3 p-4">
-                                        <div className="h-4 bg-slate-700 rounded w-3/4 animate-pulse"></div>
-                                        <div className="h-4 bg-slate-700 rounded w-full animate-pulse"></div>
-                                        <div className="h-4 bg-slate-700 rounded w-5/6 animate-pulse"></div>
-                                    </div>
-                                ) : (
-                                    <div className={`w-full p-6 pb-10 rounded-xl border relative shadow-xl fade-in ${activeTab === 'bad'
-                                            ? 'bg-white text-slate-800 border-slate-300'
-                                            : 'bg-white text-slate-800 border-emerald-500 ring-4 ring-emerald-500/10'
-                                        }`}>
-                                        {activeTab === 'bad' ? (
-                                            <>
-                                                <p className="italic font-serif text-lg mb-4">"Hallo Herr Müller, wir wollen Sie nicht. Tschüss."</p>
-                                                <div className="mt-4 pt-4 border-t border-slate-200 text-xs text-slate-500">
-                                                    <strong>Analyse:</strong> Die KI wählt den statistischen Durchschnitt. Ohne die Anweisung "Höflichkeit" kann es sehr direkt oder roboterhaft wirken.
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <p className="text-slate-800 leading-relaxed mb-4 text-sm md:text-base">
-                                                    "Sehr geehrter Herr Müller,<br /><br />
-                                                    leider können wir Ihnen aktuell keine Zusage geben, da das Budget für diese Position gestrichen wurde. Da uns Ihr Profil jedoch sehr überzeugt hat, nehmen wir Sie gerne in unseren Talentpool auf.<br /><br />
-                                                    Wir melden uns, sobald sich eine neue Tür öffnet!"
-                                                </p>
-                                            </>
-                                        )}
-                                        <button
-                                            onClick={() => setResultVisible(false)}
-                                            className="absolute bottom-2 right-2 text-xs text-slate-400 hover:text-blue-600 p-2 flex items-center gap-1"
-                                        >
-                                            <RefreshCcw size={12} /> Neu starten
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // 5. Resources Slide
-        const ResourceSlide = () => {
-            const [copied, setCopied] = useState(null);
-
-            const checklist = `CHECKLISTE VOR DEM ABSENDEN:
-1. Datenschutz: Keine echten Namen (Herr X statt Herr Müller)?
-2. Klarheit: Habe ich der KI eine Rolle gegeben?
-3. Präzision: Ist das gewünschte Format (Tabelle/Text) definiert?`;
-
-            const cheatsheet = `SPICKZETTEL - 4 BAUSTEINE:
-1. ROLLE (Wer?) -> "Du bist ein erfahrener..."
-2. AUFGABE (Was?) -> "Erstelle eine Zusammenfassung..."
-3. KONTEXT (Hintergrund?) -> "Es geht um Projekt X, das..."
-4. FORMAT (Wie?) -> "Als Tabelle, kurz und knapp."`;
-
-            const copyToClipboard = async (text, id) => {
-                // Versuche Standard-API
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    try {
-                        await navigator.clipboard.writeText(text);
-                        setCopied(id);
-                        setTimeout(() => setCopied(null), 2000);
-                        return;
-                    } catch (err) {
-                        console.log("Clipboard API failed, trying fallback...");
-                    }
-                }
-
-                // Fallback für eingebettete Umgebungen
-                try {
-                    const textArea = document.createElement("textarea");
-                    textArea.value = text;
-                    textArea.style.position = "fixed"; // prevent scrolling to bottom
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-
-                    const successful = document.execCommand('copy');
-                    document.body.removeChild(textArea);
-
-                    if (successful) {
-                        setCopied(id);
-                        setTimeout(() => setCopied(null), 2000);
-                    }
-                } catch (err) {
-                    console.error("Copy failed completely", err);
-                }
-            };
-
-            return (
-                <div className="flex flex-col h-full p-6 fade-in max-w-5xl mx-auto w-full text-slate-200">
-                    <h2 className="text-3xl font-bold mb-8 text-blue-400">Deine Werkzeuge für den Alltag</h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full pb-8">
-                        {/* Checkliste */}
-                        <div className="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col group hover:border-indigo-500 transition-colors">
-                            <div className="bg-indigo-600 p-4 font-bold flex justify-between items-center shadow-md">
-                                <span className="flex items-center gap-2"><CheckCircle size={20} /> Checkliste</span>
-                                <button onClick={() => copyToClipboard(checklist, 'check')} className="hover:bg-indigo-500 p-2 rounded-lg transition bg-indigo-700/50">
-                                    {copied === 'check' ? <CheckCircle size={20} className="text-green-300" /> : <Copy size={20} />}
-                                </button>
-                            </div>
-                            <div className="p-6 text-slate-300 whitespace-pre-wrap font-sans flex-1 bg-slate-800 leading-loose text-lg font-light">
-                                {checklist}
-                            </div>
-                        </div>
-
-                        {/* Spickzettel */}
-                        <div className="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col group hover:border-emerald-500 transition-colors">
-                            <div className="bg-emerald-600 p-4 font-bold flex justify-between items-center shadow-md">
-                                <span className="flex items-center gap-2"><Brain size={20} /> Prompt-Spickzettel</span>
-                                <button onClick={() => copyToClipboard(cheatsheet, 'cheat')} className="hover:bg-emerald-500 p-2 rounded-lg transition bg-emerald-700/50">
-                                    {copied === 'cheat' ? <CheckCircle size={20} className="text-white" /> : <Copy size={20} />}
-                                </button>
-                            </div>
-                            <div className="p-6 text-slate-300 whitespace-pre-wrap font-sans flex-1 bg-slate-800 leading-loose text-lg font-light">
-                                {cheatsheet}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- MAIN APP CONTAINER ---
-        const App = () => {
-            const [step, setStep] = useState(0);
-            const totalSteps = 5;
-
-            const nextStep = () => {
-                if (step < totalSteps - 1) setStep(step + 1);
-            };
-
-            const prevStep = () => {
-                if (step > 0) setStep(step - 1);
-            };
-
-            const renderStep = () => {
-                switch (step) {
-                    case 0: return <IntroSlide onNext={nextStep} />;
-                    case 1: return <TrainingSlide />;
-                    case 2: return <ProbabilitySlide />;
-                    case 3: return <PromptSlide />;
-                    case 4: return <ResourceSlide />;
-                    default: return <IntroSlide onNext={nextStep} />;
-                }
-            };
-
-            return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-4">
-                    <div className="w-full max-w-6xl h-[700px] bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden flex flex-col relative">
-                        {/* Progress Bar (Hide on Step 0) */}
-                        {step > 0 && (
-                            <div className="h-1 bg-slate-800 w-full">
-                                <div
-                                    className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all duration-500"
-                                    style={{ width: `${((step + 1) / totalSteps) * 100}%` }}
-                                ></div>
+                                <span className={`mt-2 text-sm font-bold bg-slate-900/90 px-3 py-1 rounded-full border border-slate-700 ${activeTab === 3 ? 'text-purple-400' : 'text-orange-400'}`}>
+                                    {activeTab === 3 ? 'Agenten Basis' : 'ChatGPT (Web)'}
+                                </span>
                             </div>
                         )}
 
-                        {/* Main Content Area */}
-                        <div className="flex-1 overflow-y-auto bg-slate-950/50 relative scroll-smooth">
-                            {renderStep()}
+                        {/* Moving Characters */}
+
+                        {/* User Character */}
+                        <div
+                            className="absolute transition-all duration-700 ease-in-out z-20 flex flex-col items-center"
+                            style={{
+                                ...getPosStyle(currentStepData.userPos),
+                                transform: 'translate(-50%, -50%)'
+                            }}
+                        >
+                            <div className="w-12 h-12 bg-blue-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-blue-500/20">
+                                <User size={24} />
+                            </div>
+                            {/* User Bubble */}
+                            {currentStepData.bubble && !currentStepData.showAgent && (
+                                <div className="absolute bottom-14 w-48 bg-slate-800 p-3 rounded-xl shadow-2xl border border-slate-600 text-xs text-center animate-bounce text-slate-200">
+                                    {currentStepData.bubble}
+                                    <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
+                                </div>
+                            )}
+                            {/* Special Bubble for User when Agent is present (Stage 3) */}
+                            {currentStepData.bubble && currentStepData.showAgent && !currentStepData.bubble.startsWith("Agent") && (
+                                <div className="absolute bottom-14 w-48 bg-slate-800 p-3 rounded-xl shadow-2xl border border-slate-600 text-xs text-center animate-bounce text-slate-200">
+                                    {currentStepData.bubble}
+                                    <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Navigation Footer (Hide on Step 0) */}
-                        {step > 0 && (
-                            <div className="bg-slate-900 border-t border-slate-800 p-6 flex justify-between items-center z-10">
-                                <button
-                                    onClick={prevStep}
-                                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition text-slate-400 hover:bg-slate-800 hover:text-white"
-                                >
-                                    <ArrowLeft size={20} /> Zurück
-                                </button>
-
-                                <div className="text-slate-600 font-mono text-sm hidden md:block">
-                                    Schritt {step + 1} / {totalSteps}
+                        {/* Agent Character (Only visible in Stage 3 or as target in Stage 2) */}
+                        {currentStepData.showAgent && (
+                            <div
+                                className="absolute transition-all duration-700 ease-in-out z-20 flex flex-col items-center"
+                                style={{
+                                    ...getPosStyle(currentStepData.agentPos),
+                                    transform: 'translate(-50%, -50%)' // Slightly offset so they don't perfectly overlap if at same spot
+                                }}
+                            >
+                                <div className="w-12 h-12 bg-purple-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-purple-500/20">
+                                    <Bot size={24} />
                                 </div>
-
-                                <button
-                                    onClick={nextStep}
-                                    disabled={step === totalSteps - 1}
-                                    className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition shadow-lg ${step === totalSteps - 1
-                                            ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                                            : 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-105'
-                                        }`}
-                                >
-                                    {step === totalSteps - 1 ? 'Fertig' : 'Weiter'} <ArrowRight size={20} />
-                                </button>
+                                {/* Agent Bubble */}
+                                {currentStepData.bubble && (currentStepData.bubble.startsWith("Agent") || currentStepData.bubble.startsWith("System")) && (
+                                    <div className="absolute bottom-14 w-48 bg-purple-900 p-3 rounded-xl shadow-2xl border border-purple-500 text-xs text-center font-semibold text-purple-100 animate-pulse">
+                                        {currentStepData.bubble}
+                                        <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-purple-900 border-r border-b border-purple-500 rotate-45"></div>
+                                    </div>
+                                )}
                             </div>
                         )}
+
                     </div>
+
+                    {/* Control Panel */}
+                    <div className="bg-slate-900 border-t border-slate-800 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+
+                        <div className="flex-1">
+                            <div className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">
+                                Aktueller Schritt ({step + 1} / {currentScenario.steps.length})
+                            </div>
+                            <div className="text-lg text-slate-200 font-medium leading-snug">
+                                {currentStepData.text}
+                            </div>
+                        </div>
+
+                        <div>
+                            {!currentStepData.isDone ? (
+                                <button
+                                    onClick={handleNext}
+                                    disabled={isAnimating}
+                                    className="group flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/40 transform transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                >
+                                    {currentStepData.action}
+                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                </button>
+                            ) : (
+                                <button
+                                    disabled
+                                    className="flex items-center gap-2 bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-green-900/40 opacity-90"
+                                >
+                                    Szenario beendet <CheckCircle size={20} />
+                                </button>
+                            )}
+                        </div>
+
+                    </div>
+
                 </div>
             );
         };
