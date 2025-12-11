@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KI Verstehen: Interaktive Lernreise</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bar-transition {
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s;
+        }
+
+        /* Scrollbar styling for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONS ---
+        const Icon = ({ children, size = 24, className = "" }) => (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width={size}
+                height={size}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const ArrowRight = (props) => <Icon {...props}><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></Icon>;
+        const ArrowLeft = (props) => <Icon {...props}><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></Icon>;
+        const Brain = (props) => <Icon {...props}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" /><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" /></Icon>;
+        const RefreshCcw = (props) => <Icon {...props}><path d="M3 2v6h6" /><path d="M21 12A9 9 0 0 0 6 5.3L3 8" /><path d="M21 22v-6h-6" /><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7" /></Icon>;
+        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>;
+        const AlertTriangle = (props) => <Icon {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></Icon>;
+        const Copy = (props) => <Icon {...props}><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></Icon>;
+        const MousePointerClick = (props) => <Icon {...props}><path d="M14 4.1 12 6" /><path d="m5.1 8-2.9-.8" /><path d="m6 12-1.9 2" /><path d="M7.2 2.2 8 5.1" /><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z" /></Icon>;
+        const Play = (props) => <Icon {...props}><polygon points="5 3 19 12 5 21 5 3" /></Icon>;
+
+        // --- KOMPONENTEN ---
+
+        // 1. Intro Slide
+        const IntroSlide = ({ onNext }) => (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8 fade-in text-slate-200">
+                <div className="bg-blue-600 text-white p-6 rounded-full mb-8 shadow-[0_0_30px_rgba(37,99,235,0.5)]">
+                    <Brain size={80} />
+                </div>
+                <h1 className="text-5xl font-bold mb-6 tracking-tight">Wie "denkt" die KI?</h1>
+                <p className="text-xl text-slate-400 mb-12 max-w-2xl leading-relaxed">
+                    Willkommen zur interaktiven Reise in das Gehirn eines Large Language Models.
+                    Entdecke Schritt für Schritt, wie es lernt, spricht und halluziniert.
+                </p>
+                <button onClick={onNext} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition transform hover:scale-105 flex items-center gap-3 text-lg">
+                    Lernreise starten <ArrowRight size={24} />
+                </button>
+            </div>
+        );
+
+        // 2. Training Slide
+        const TrainingSlide = () => {
+            const [step, setStep] = useState(0); // 0=Initial, 1-3=Learning Stages, 4=Done
+
+            const learningStages = [
+                // Stage 0: Untrained
+                [
+                    { word: "Banane", value: 60, color: "bg-red-500" },
+                    { word: "Katze", value: 10, color: "bg-emerald-600" },
+                    { word: "Postbotin", value: 15, color: "bg-blue-500" },
+                    { word: "Wolke", value: 15, color: "bg-slate-500" }
+                ],
+                // Stage 1
+                [
+                    { word: "Banane", value: 45, color: "bg-red-400" },
+                    { word: "Katze", value: 25, color: "bg-emerald-600" },
+                    { word: "Postbotin", value: 20, color: "bg-blue-500" },
+                    { word: "Wolke", value: 10, color: "bg-slate-500" }
+                ],
+                // Stage 2
+                [
+                    { word: "Banane", value: 20, color: "bg-red-400" },
+                    { word: "Katze", value: 55, color: "bg-emerald-600" },
+                    { word: "Postbotin", value: 20, color: "bg-blue-500" },
+                    { word: "Wolke", value: 5, color: "bg-slate-500" }
+                ],
+                // Stage 3 (Final)
+                [
+                    { word: "Banane", value: 2, color: "bg-slate-600" },
+                    { word: "Katze", value: 88, color: "bg-emerald-500" },
+                    { word: "Postbotin", value: 8, color: "bg-blue-500" },
+                    { word: "Wolke", value: 2, color: "bg-slate-600" }
+                ]
+            ];
+
+            const currentWeights = learningStages[step > 3 ? 3 : step];
+
+            // Logik: Finde das Wort mit der höchsten Wahrscheinlichkeit
+            const topPrediction = currentWeights.reduce((prev, current) => (prev.value > current.value) ? prev : current);
+
+            const trainStep = () => {
+                if (step < 3) {
+                    setStep(step + 1);
+                } else {
+                    setStep(4);
+                }
+            };
+
+            const reset = () => {
+                setStep(0);
+            };
+
+            return (
+                <div className="flex flex-col h-full p-6 fade-in max-w-4xl mx-auto w-full text-slate-200">
+                    <h2 className="text-3xl font-bold mb-2 text-blue-400">Phase 1: Das Training</h2>
+                    <p className="text-slate-400 mb-8 text-lg">Das interne Wissen der KI (Wahrscheinlichkeiten) passt sich durch Wiederholung an.</p>
+
+                    <div className="bg-slate-800 rounded-xl shadow-2xl p-8 border border-slate-700 mb-8">
+                        <div className="text-4xl font-mono text-center mb-10">
+                            "Der Hund jagt die <span className="border-b-4 border-blue-500 px-2 inline-block min-w-[150px] text-blue-300">
+                                {step === 0 ? '???' :
+                                    <span className={topPrediction.word === 'Katze' ? "text-emerald-400 font-bold" : "text-red-400"}>
+                                        {topPrediction.word}
+                                    </span>
+                                }
+                            </span>"
+                        </div>
+
+                        <div className="space-y-4">
+                            <p className="text-sm text-slate-500 font-semibold uppercase tracking-wider mb-2">Aktuelle Wahrscheinlichkeiten im KI-Gehirn:</p>
+                            {currentWeights.map((w, idx) => (
+                                <div key={idx} className="flex items-center gap-4 group">
+                                    <span className={`w-24 text-right font-medium ${w.value > 50 ? 'text-white' : 'text-slate-400'}`}>{w.word}</span>
+                                    <div className="flex-1 bg-slate-700 rounded-full h-8 overflow-hidden relative shadow-inner">
+                                        <div
+                                            className={`h-full bar-transition ${w.color}`}
+                                            style={{ width: `${w.value}%` }}
+                                        ></div>
+                                        <span className="absolute inset-0 flex items-center justify-end px-3 text-xs font-bold text-slate-900 opacity-60">{w.value}%</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="text-center h-24 flex flex-col items-center justify-center">
+                        {step < 3 ? (
+                            <div className="space-y-2">
+                                <button onClick={trainStep} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl shadow-lg font-bold flex items-center gap-2 mx-auto transition active:scale-95">
+                                    <Brain size={20} />
+                                    {step === 0 ? "Training starten (1. Durchlauf)" :
+                                        topPrediction.word === 'Katze' ? "Weiter trainieren (Vertiefen)" : "Weiter trainieren & anpassen"}
+                                </button>
+                                {step > 0 && <p className="text-sm text-slate-500">
+                                    {topPrediction.word === 'Katze' ? "Das Modell hat es verstanden, aber wir trainieren weiter für mehr Sicherheit." : "Klicke erneut, um das Modell zu verbessern."}
+                                </p>}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-4 fade-in">
+                                <div className="text-emerald-400 font-bold text-xl flex items-center justify-center gap-2 bg-slate-800/50 px-6 py-2 rounded-full border border-emerald-500/30">
+                                    <CheckCircle /> Training abgeschlossen!
+                                </div>
+                                <button onClick={reset} className="text-slate-500 hover:text-blue-400 text-sm flex items-center gap-1 transition">
+                                    <RefreshCcw size={14} /> Zurücksetzen
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // 3. Probabilities Slide (Hallucination)
+        const ProbabilitySlide = () => {
+            const [selectedWord, setSelectedWord] = useState(null);
+
+            const words = [
+                { text: "Katze", type: "standard", prob: "80%", desc: "Die logische Wahl." },
+                { text: "Postbotin", type: "creative", prob: "15%", desc: "Kreativ! Macht die Geschichte spannend." },
+                { text: "Bratpfanne", type: "hallucination", prob: "5%", desc: "Halluzination. Grammatikalisch korrekt, inhaltlich Unsinn." }
+            ];
+
+            return (
+                <div className="flex flex-col h-full p-6 fade-in max-w-4xl mx-auto w-full text-slate-200">
+                    <h2 className="text-3xl font-bold mb-2 text-blue-400">Phase 2: Die Auswahl</h2>
+                    <p className="text-slate-400 mb-6 text-lg">
+                        Die KI würfelt das nächste Wort. Kreativität entsteht, wenn wir unwahrscheinlichere Pfade wählen.
+                    </p>
+
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-6 flex items-center gap-3 text-yellow-200">
+                        <MousePointerClick size={20} />
+                        <span className="font-semibold">Klicke unten auf eines der Wörter, um den Satz zu beenden!</span>
+                    </div>
+
+                    <div className="bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
+                        <p className="text-3xl mb-8 text-center font-mono">"Der Hund jagt die ..."</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            {words.map((w, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setSelectedWord(w)}
+                                    className={`p-6 rounded-xl border-2 text-left transition transform hover:-translate-y-1 hover:shadow-xl relative overflow-hidden group ${selectedWord === w
+                                            ? 'border-blue-500 bg-blue-900/30 ring-2 ring-blue-500/50'
+                                            : 'border-slate-600 bg-slate-700/50 hover:border-blue-400 hover:bg-slate-700'
+                                        }`}
+                                >
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="font-bold text-xl text-white">{w.text}</span>
+                                        <span className="text-xs bg-slate-900 text-slate-300 px-2 py-1 rounded border border-slate-600 font-mono">{w.prob}</span>
+                                    </div>
+                                    <div className="text-sm text-slate-400 group-hover:text-slate-300">{w.type === 'standard' ? 'Standard' : w.type === 'creative' ? 'Kreativ' : 'Halluzination'}</div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="min-h-[140px]">
+                            {selectedWord && (
+                                <div className={`p-6 rounded-xl border-l-4 fade-in ${selectedWord.type === 'standard' ? 'bg-emerald-900/20 border-emerald-500' :
+                                        selectedWord.type === 'creative' ? 'bg-blue-900/20 border-blue-500' :
+                                            'bg-red-900/20 border-red-500'
+                                    }`}>
+                                    <h3 className="font-bold text-xl mb-2 flex items-center gap-2 text-white">
+                                        {selectedWord.type === 'hallucination' && <AlertTriangle size={24} className="text-red-500" />}
+                                        Ergebnis: "Der Hund jagt die <span className="underline decoration-2 underline-offset-4">{selectedWord.text}</span>."
+                                    </h3>
+                                    <p className="text-slate-300 text-lg leading-relaxed">{selectedWord.desc}</p>
+                                    {selectedWord.type === 'hallucination' && (
+                                        <p className="text-red-400 text-sm mt-3 font-semibold bg-red-950/50 p-2 rounded">
+                                            ⚠️ Achtung: So entstehen falsche Fakten! Es klingt grammatikalisch richtig, ist aber inhaltlich falsch.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 4. Prompting Slide
+        const PromptSlide = () => {
+            const [activeTab, setActiveTab] = useState('bad');
+            const [resultVisible, setResultVisible] = useState(false);
+            const [isGenerating, setIsGenerating] = useState(false);
+
+            const handleTabChange = (tab) => {
+                setActiveTab(tab);
+                setResultVisible(false);
+                setIsGenerating(false);
+            };
+
+            const generateResponse = () => {
+                setIsGenerating(true);
+                setTimeout(() => {
+                    setIsGenerating(false);
+                    setResultVisible(true);
+                }, 1500);
+            };
+
+            return (
+                <div className="flex flex-col h-full p-6 fade-in max-w-7xl mx-auto w-full text-slate-200">
+                    <h2 className="text-3xl font-bold mb-2 text-blue-400">Phase 3: Der perfekte Prompt</h2>
+                    <p className="text-slate-400 mb-6 text-lg">
+                        Vergleiche die Ergebnisse: Eine ungenaue Anweisung vs. die 4-Bausteine-Methode.
+                    </p>
+
+                    <div className="flex gap-2 mb-0">
+                        <button
+                            onClick={() => handleTabChange('bad')}
+                            className={`px-6 py-3 rounded-t-xl font-bold transition ${activeTab === 'bad' ? 'bg-slate-800 text-red-400 border-t-2 border-x-2 border-slate-700 border-b-0' : 'bg-slate-900 text-slate-500 hover:text-slate-300 border-b-2 border-slate-700'}`}
+                        >
+                            ❌ Schlechter Prompt
+                        </button>
+                        <button
+                            onClick={() => handleTabChange('good')}
+                            className={`px-6 py-3 rounded-t-xl font-bold transition ${activeTab === 'good' ? 'bg-slate-800 text-emerald-400 border-t-2 border-x-2 border-slate-700 border-b-0' : 'bg-slate-900 text-slate-500 hover:text-slate-300 border-b-2 border-slate-700'}`}
+                        >
+                            ✅ Guter Prompt
+                        </button>
+                    </div>
+
+                    <div className="bg-slate-800 rounded-b-xl rounded-tr-xl shadow-2xl border border-slate-700 flex-1 overflow-hidden flex flex-col md:flex-row">
+
+                        {/* LEFT: Input Area */}
+                        <div className="p-6 md:w-[45%] flex flex-col bg-slate-800/50">
+                            <h3 className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-4">Eingabe (Dein Prompt)</h3>
+
+                            <div className="flex-1">
+                                {activeTab === 'bad' ? (
+                                    <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 h-full shadow-inner">
+                                        <p className="font-mono text-lg text-slate-300">"Schreib eine Absage an Herrn Müller."</p>
+                                        <div className="mt-6 p-3 bg-red-900/20 border border-red-900/50 rounded-lg text-red-300 text-sm flex items-start gap-2">
+                                            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                                            <span>Zu wenig Kontext! Die KI muss raten, wie höflich oder detailliert sie sein soll.</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-slate-900 p-5 rounded-xl border border-slate-700 h-full shadow-inner text-sm space-y-2">
+                                        <div className="p-2 bg-purple-900/20 border-l-2 border-purple-500 rounded"><span className="text-purple-300 font-bold uppercase text-xs block mb-1">Rolle</span> Du bist ein freundlicher Personaler.</div>
+                                        <div className="p-2 bg-blue-900/20 border-l-2 border-blue-500 rounded"><span className="text-blue-300 font-bold uppercase text-xs block mb-1">Aufgabe</span> Schreibe eine Absage an Herrn Müller.</div>
+                                        <div className="p-2 bg-yellow-900/20 border-l-2 border-yellow-500 rounded"><span className="text-yellow-300 font-bold uppercase text-xs block mb-1">Kontext</span> Kein Budget mehr, behalten ihn aber im Pool.</div>
+                                        <div className="p-2 bg-emerald-900/20 border-l-2 border-emerald-500 rounded"><span className="text-emerald-300 font-bold uppercase text-xs block mb-1">Format</span> Kurz, wertschätzend, max. 3 Sätze.</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* MIDDLE: Action Area */}
+                        <div className="flex items-center justify-center p-4 md:w-[10%] bg-slate-800 border-y md:border-y-0 md:border-x border-slate-700">
+                            {!resultVisible && !isGenerating && (
+                                <button
+                                    onClick={generateResponse}
+                                    className={`w-16 h-16 md:w-20 md:h-20 rounded-full shadow-xl flex items-center justify-center transition hover:scale-110 active:scale-95 z-10 ${activeTab === 'bad' ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white ring-4 ring-blue-500/30'
+                                        }`}
+                                    title="An KI senden"
+                                >
+                                    <Play size={32} fill="currentColor" className="ml-1" />
+                                </button>
+                            )}
+                            {isGenerating && (
+                                <div className="w-16 h-16 md:w-20 md:h-20 flex flex-col items-center justify-center rounded-full bg-slate-700 text-blue-400 animate-pulse">
+                                    <Brain size={24} className="animate-bounce" />
+                                </div>
+                            )}
+                            {resultVisible && (
+                                <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-emerald-600/20 text-emerald-500 border border-emerald-500/50">
+                                    <CheckCircle size={32} />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* RIGHT: Output Area */}
+                        <div className="p-6 md:w-[45%] flex flex-col bg-slate-900/30">
+                            <h3 className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-4">KI Antwort</h3>
+
+                            <div className="flex-1 flex items-center justify-center">
+                                {!resultVisible && !isGenerating ? (
+                                    <div className="text-center text-slate-600 opacity-50">
+                                        <div className="inline-block p-4 rounded-full mb-3 border-2 border-dashed border-slate-700">
+                                            <ArrowRight size={30} />
+                                        </div>
+                                        <p>Klicke auf Play zum Generieren</p>
+                                    </div>
+                                ) : isGenerating ? (
+                                    <div className="w-full space-y-3 p-4">
+                                        <div className="h-4 bg-slate-700 rounded w-3/4 animate-pulse"></div>
+                                        <div className="h-4 bg-slate-700 rounded w-full animate-pulse"></div>
+                                        <div className="h-4 bg-slate-700 rounded w-5/6 animate-pulse"></div>
+                                    </div>
+                                ) : (
+                                    <div className={`w-full p-6 pb-10 rounded-xl border relative shadow-xl fade-in ${activeTab === 'bad'
+                                            ? 'bg-white text-slate-800 border-slate-300'
+                                            : 'bg-white text-slate-800 border-emerald-500 ring-4 ring-emerald-500/10'
+                                        }`}>
+                                        {activeTab === 'bad' ? (
+                                            <>
+                                                <p className="italic font-serif text-lg mb-4">"Hallo Herr Müller, wir wollen Sie nicht. Tschüss."</p>
+                                                <div className="mt-4 pt-4 border-t border-slate-200 text-xs text-slate-500">
+                                                    <strong>Analyse:</strong> Die KI wählt den statistischen Durchschnitt. Ohne die Anweisung "Höflichkeit" kann es sehr direkt oder roboterhaft wirken.
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <p className="text-slate-800 leading-relaxed mb-4 text-sm md:text-base">
+                                                    "Sehr geehrter Herr Müller,<br /><br />
+                                                    leider können wir Ihnen aktuell keine Zusage geben, da das Budget für diese Position gestrichen wurde. Da uns Ihr Profil jedoch sehr überzeugt hat, nehmen wir Sie gerne in unseren Talentpool auf.<br /><br />
+                                                    Wir melden uns, sobald sich eine neue Tür öffnet!"
+                                                </p>
+                                            </>
+                                        )}
+                                        <button
+                                            onClick={() => setResultVisible(false)}
+                                            className="absolute bottom-2 right-2 text-xs text-slate-400 hover:text-blue-600 p-2 flex items-center gap-1"
+                                        >
+                                            <RefreshCcw size={12} /> Neu starten
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 5. Resources Slide
+        const ResourceSlide = () => {
+            const [copied, setCopied] = useState(null);
+
+            const checklist = `CHECKLISTE VOR DEM ABSENDEN:
+1. Datenschutz: Keine echten Namen (Herr X statt Herr Müller)?
+2. Klarheit: Habe ich der KI eine Rolle gegeben?
+3. Präzision: Ist das gewünschte Format (Tabelle/Text) definiert?`;
+
+            const cheatsheet = `SPICKZETTEL - 4 BAUSTEINE:
+1. ROLLE (Wer?) -> "Du bist ein erfahrener..."
+2. AUFGABE (Was?) -> "Erstelle eine Zusammenfassung..."
+3. KONTEXT (Hintergrund?) -> "Es geht um Projekt X, das..."
+4. FORMAT (Wie?) -> "Als Tabelle, kurz und knapp."`;
+
+            const copyToClipboard = async (text, id) => {
+                // Versuche Standard-API
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        setCopied(id);
+                        setTimeout(() => setCopied(null), 2000);
+                        return;
+                    } catch (err) {
+                        console.log("Clipboard API failed, trying fallback...");
+                    }
+                }
+
+                // Fallback für eingebettete Umgebungen
+                try {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed"; // prevent scrolling to bottom
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+
+                    if (successful) {
+                        setCopied(id);
+                        setTimeout(() => setCopied(null), 2000);
+                    }
+                } catch (err) {
+                    console.error("Copy failed completely", err);
+                }
+            };
+
+            return (
+                <div className="flex flex-col h-full p-6 fade-in max-w-5xl mx-auto w-full text-slate-200">
+                    <h2 className="text-3xl font-bold mb-8 text-blue-400">Deine Werkzeuge für den Alltag</h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full pb-8">
+                        {/* Checkliste */}
+                        <div className="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col group hover:border-indigo-500 transition-colors">
+                            <div className="bg-indigo-600 p-4 font-bold flex justify-between items-center shadow-md">
+                                <span className="flex items-center gap-2"><CheckCircle size={20} /> Checkliste</span>
+                                <button onClick={() => copyToClipboard(checklist, 'check')} className="hover:bg-indigo-500 p-2 rounded-lg transition bg-indigo-700/50">
+                                    {copied === 'check' ? <CheckCircle size={20} className="text-green-300" /> : <Copy size={20} />}
+                                </button>
+                            </div>
+                            <div className="p-6 text-slate-300 whitespace-pre-wrap font-sans flex-1 bg-slate-800 leading-loose text-lg font-light">
+                                {checklist}
+                            </div>
+                        </div>
+
+                        {/* Spickzettel */}
+                        <div className="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col group hover:border-emerald-500 transition-colors">
+                            <div className="bg-emerald-600 p-4 font-bold flex justify-between items-center shadow-md">
+                                <span className="flex items-center gap-2"><Brain size={20} /> Prompt-Spickzettel</span>
+                                <button onClick={() => copyToClipboard(cheatsheet, 'cheat')} className="hover:bg-emerald-500 p-2 rounded-lg transition bg-emerald-700/50">
+                                    {copied === 'cheat' ? <CheckCircle size={20} className="text-white" /> : <Copy size={20} />}
+                                </button>
+                            </div>
+                            <div className="p-6 text-slate-300 whitespace-pre-wrap font-sans flex-1 bg-slate-800 leading-loose text-lg font-light">
+                                {cheatsheet}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MAIN APP CONTAINER ---
+        const App = () => {
+            const [step, setStep] = useState(0);
+            const totalSteps = 5;
+
+            const nextStep = () => {
+                if (step < totalSteps - 1) setStep(step + 1);
+            };
+
+            const prevStep = () => {
+                if (step > 0) setStep(step - 1);
+            };
+
+            const renderStep = () => {
+                switch (step) {
+                    case 0: return <IntroSlide onNext={nextStep} />;
+                    case 1: return <TrainingSlide />;
+                    case 2: return <ProbabilitySlide />;
+                    case 3: return <PromptSlide />;
+                    case 4: return <ResourceSlide />;
+                    default: return <IntroSlide onNext={nextStep} />;
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4">
+                    <div className="w-full max-w-6xl h-[700px] bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden flex flex-col relative">
+                        {/* Progress Bar (Hide on Step 0) */}
+                        {step > 0 && (
+                            <div className="h-1 bg-slate-800 w-full">
+                                <div
+                                    className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all duration-500"
+                                    style={{ width: `${((step + 1) / totalSteps) * 100}%` }}
+                                ></div>
+                            </div>
+                        )}
+
+                        {/* Main Content Area */}
+                        <div className="flex-1 overflow-y-auto bg-slate-950/50 relative scroll-smooth">
+                            {renderStep()}
+                        </div>
+
+                        {/* Navigation Footer (Hide on Step 0) */}
+                        {step > 0 && (
+                            <div className="bg-slate-900 border-t border-slate-800 p-6 flex justify-between items-center z-10">
+                                <button
+                                    onClick={prevStep}
+                                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition text-slate-400 hover:bg-slate-800 hover:text-white"
+                                >
+                                    <ArrowLeft size={20} /> Zurück
+                                </button>
+
+                                <div className="text-slate-600 font-mono text-sm hidden md:block">
+                                    Schritt {step + 1} / {totalSteps}
+                                </div>
+
+                                <button
+                                    onClick={nextStep}
+                                    disabled={step === totalSteps - 1}
+                                    className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition shadow-lg ${step === totalSteps - 1
+                                            ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                                            : 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-105'
+                                        }`}
+                                >
+                                    {step === totalSteps - 1 ? 'Fertig' : 'Weiter'} <ArrowRight size={20} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
