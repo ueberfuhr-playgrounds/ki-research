@@ -5,3 +5,5 @@ Dieses Repository wird zu Experimentierzwecken genutzt. Ziel ist es, die Zuverl√
 ## Inhalte
 
 - [KI-Modellvergleich](0-model-comparison/README.md)
+- [Erkl√§rung: Large Language Models](01-llm-definition/README.md)
+
