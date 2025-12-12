@@ -215,11 +215,7 @@
             const [activeId, setActiveId] = React.useState(null);
 
             // Coordinates in Percent (Left, Top)
-            // Agent in Center
-            // Model Top Center
-            // Gem Left
-            // Extensions Right
-            // RAG Bottom Center
+            // Reverted to single 'extensions' node on the right
             const positions = {
                 model: { x: 50, y: 20 },
                 agent: { x: 50, y: 50 },
@@ -274,9 +270,14 @@
                     color: 'border-green-500 shadow-green-500/20',
                     pos: positions.extensions,
                     description: 'Verbindungen zur Außenwelt. Ohne diese kann die KI nur reden. Mit ihnen kann sie in Ihre Systeme greifen.',
-                    analogy: 'Der Zugriff auf E-Mail, Kalender oder das Internet.',
-                    example: 'Der Agent sucht eine Mail in Outlook oder trägt Zahlen in Excel ein.',
-                    techTerm: 'Extensions (Gemini) / Connectors & MCP (Claude)'
+                    analogy: 'Fest installierte Werkzeuge (Telefon) oder Universal-Anschlüsse (USB-Stick) für Datenbanken.',
+                    example: 'Der Agent nutzt Google Maps oder greift direkt auf die SQL-Datenbank zu.',
+                    // techDetails property for specialized 3-box rendering
+                    techDetails: [
+                        { title: 'Extensions (Gemini)', desc: 'Proprietäre Tools für Google Workspace (Gmail, Drive, Maps).' },
+                        { title: 'Connectors (Claude)', desc: 'Enterprise-Verbindungen für Business-Software (Jira, Salesforce).' },
+                        { title: 'Model Context Protocol (MCP)', desc: 'Offener Standard für lokale Daten & Datenbanken.' }
+                    ]
                 },
                 {
                     id: 'rag',
@@ -285,9 +286,9 @@
                     icon: <FileTextIcon className="w-10 h-10 text-red-400" />,
                     color: 'border-red-500 shadow-red-500/20',
                     pos: positions.rag,
-                    description: 'Die Möglichkeit, eigene Dokumente (PDFs, Richtlinien) hochzuladen, damit der Agent nicht halluziniert, sondern Fakten nutzt.',
+                    description: 'Die Möglichkeit, Dokumente (PDFs, Richtlinien) direkt hochzuladen, damit der Agent nicht halluziniert, sondern Fakten nutzt.',
                     analogy: 'Der Mitarbeiter geht zum Aktenschrank, liest die Richtlinie und antwortet erst dann.',
-                    example: 'Frage an KI: "Wie viel Spesen darf ich abrechnen?" (KI liest in der hochgeladenen PDF nach).',
+                    example: 'Frage an KI: "Wie viel Spesen darf ich abrechnen?" (KI liest in der PDF nach).',
                     techTerm: 'RAG (Retrieval Augmented Generation)'
                 }
             ];
@@ -382,14 +383,32 @@
                                         </div>
                                     </div>
 
-                                    {/* Tech Term Footer */}
+                                    {/* Tech Term Footer - Adaptive rendering */}
                                     <div className="pt-6 mt-6 border-t border-slate-700">
-                                        <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-2">
-                                            Technischer Begriff
+                                        <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-3">
+                                            Technische Begriffe
                                         </p>
-                                        <code className="font-mono text-sm text-green-400 bg-slate-900 px-3 py-1 rounded border border-slate-700 inline-block">
-                                            {activeContent.techTerm}
-                                        </code>
+
+                                        {activeContent.techDetails ? (
+                                            /* Render 3 frames if techDetails exists (For Extensions) */
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                {activeContent.techDetails.map((item, idx) => (
+                                                    <div key={idx} className="bg-slate-900/50 border border-slate-700 p-4 rounded-lg flex flex-col justify-center">
+                                                        <span className="text-green-400 font-mono text-sm font-bold mb-1 block">
+                                                            {item.title}
+                                                        </span>
+                                                        <span className="text-slate-400 text-xs leading-snug">
+                                                            {item.desc}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            /* Standard rendering for other nodes */
+                                            <code className="font-mono text-sm text-green-400 bg-slate-900 px-3 py-1 rounded border border-slate-700 inline-block">
+                                                {activeContent.techTerm}
+                                            </code>
+                                        )}
                                     </div>
                                 </div>
                             </div>
