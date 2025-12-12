@@ -21,6 +21,24 @@
             margin: 0;
             overflow: hidden;
         }
+
+        /* Custom Scrollbar für die Sidebar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
     </style>
 </head>
 
@@ -28,9 +46,9 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect, useRef } = React;
 
-        // --- Custom Icons Components (Ersatz für lucide-react, um CDN Fehler zu vermeiden) ---
+        // --- Custom Icons Components ---
         const IconBase = ({ children, size = 24, className = "" }) => (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -122,11 +140,20 @@
             </IconBase>
         );
 
+        const Info = (props) => (
+            <IconBase {...props}>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+            </IconBase>
+        );
+
         const App = () => {
             const [hasStarted, setHasStarted] = useState(false);
             const [activeTab, setActiveTab] = useState(1);
             const [step, setStep] = useState(0);
             const [isAnimating, setIsAnimating] = useState(false);
+            const stepsEndRef = useRef(null);
 
             // Definition der Positionen auf dem Spielfeld (in Prozent)
             const positions = {
@@ -140,7 +167,7 @@
             const scenarios = {
                 1: {
                     title: "Stufe 1: Manuell",
-                    description: "Der User macht alles selbst. Hoher manueller Aufwand.",
+                    description: "Der User macht alles selbst. Hoher manueller Aufwand und viele Laufwege.",
                     steps: [
                         {
                             text: "Start: Du sitzt arbeitsbereit an deinem Schreibtisch.",
@@ -200,7 +227,7 @@
                 },
                 2: {
                     title: "Stufe 2: Mit LLM",
-                    description: "Der User nutzt KI zum Texten, ist aber der 'Daten-Kurier'.",
+                    description: "Der User nutzt KI zum Texten, muss aber die Daten selbst als 'Kurier' transportieren.",
                     steps: [
                         {
                             text: "Start: Du bist bereit, KI als Hilfsmittel zu nutzen.",
@@ -269,7 +296,7 @@
                 },
                 3: {
                     title: "Stufe 3: Mit KI-Agent",
-                    description: "Der User delegiert. Der Agent bewegt sich und nutzt Tools.",
+                    description: "Der User delegiert. Der Agent arbeitet autonom über Systemgrenzen hinweg.",
                     steps: [
                         {
                             text: "Vorbereitung: Der neue KI-Agent steht bereit. Bevor wir arbeiten, müssen wir ihn einmalig instruieren.",
@@ -364,6 +391,13 @@
             const currentScenario = scenarios[activeTab];
             const currentStepData = currentScenario.steps[step];
 
+            // Auto-Scroll to bottom of steps list
+            useEffect(() => {
+                if (stepsEndRef.current) {
+                    stepsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, [step, activeTab]);
+
             const handleNext = () => {
                 if (step < currentScenario.steps.length - 1) {
                     setIsAnimating(true);
@@ -372,9 +406,22 @@
                 }
             };
 
+            const handleNextScenario = () => {
+                if (activeTab < 3) {
+                    setActiveTab(activeTab + 1);
+                    setStep(0);
+                }
+            };
+
             const handleTabChange = (tabId) => {
                 setActiveTab(tabId);
                 setStep(0);
+            };
+
+            const jumpToStep = (index) => {
+                if (index <= step && !isAnimating) {
+                    setStep(index);
+                }
             };
 
             // Helper zum Berechnen der Position basierend auf dem String-Key
@@ -430,7 +477,7 @@
 
                     {/* Header */}
                     <div className="bg-slate-900 shadow-md border-b border-slate-800 p-4 z-10">
-                        <div className="flex justify-between items-center mb-4">
+                        <div className="flex justify-between items-center mb-2">
                             <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
                                 Simulation: KI-Workflow
                             </h1>
@@ -451,139 +498,199 @@
                                 </button>
                             ))}
                         </div>
-                        <p className="mt-4 text-slate-400 text-sm border-l-2 border-blue-500 pl-3 italic">
-                            {currentScenario.description}
-                        </p>
                     </div>
 
-                    {/* Main Game Area */}
-                    <div className="flex-grow relative bg-slate-900 overflow-hidden m-4 rounded-xl border border-slate-700 shadow-2xl">
+                    {/* Main Content Area: Flex Container for Game & Sidebar */}
+                    <div className="flex-grow flex flex-col md:flex-row gap-4 m-4 overflow-hidden">
 
-                        {/* Stations */}
+                        {/* Left Column: Game Area */}
+                        <div className="flex-1 flex flex-col min-w-0">
 
-                        {/* User Desk */}
-                        <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '50%' }}>
-                            <div className="w-24 h-24 bg-slate-800 rounded-full border-4 border-slate-600 flex items-center justify-center shadow-lg">
-                                <Monitor size={40} className="text-slate-400" />
-                            </div>
-                            <span className="mt-2 text-sm font-bold text-slate-400 bg-slate-900/90 px-3 py-1 rounded-full border border-slate-700">Dein Schreibtisch</span>
-                        </div>
-
-                        {/* System / ERP */}
-                        <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '20%', left: '20%' }}>
-                            <div className="w-20 h-20 bg-emerald-900/30 rounded-lg border-4 border-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/20">
-                                <Database size={32} className="text-emerald-500" />
-                            </div>
-                            <span className="mt-2 text-sm font-bold text-emerald-500 bg-slate-900/90 px-3 py-1 rounded-full border border-slate-700">ERP System</span>
-                        </div>
-
-                        {/* Email / Outlook */}
-                        <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '20%', left: '80%' }}>
-                            <div className="w-20 h-20 bg-sky-900/30 rounded-lg border-4 border-sky-700 flex items-center justify-center shadow-lg shadow-sky-900/20">
-                                <Mail size={32} className="text-sky-500" />
-                            </div>
-                            <span className="mt-2 text-sm font-bold text-sky-500 bg-slate-900/90 px-3 py-1 rounded-full border border-slate-700">Outlook</span>
-                        </div>
-
-                        {/* AI Station (ChatGPT or Agent Home) - Only visible in Tab 2 & 3 */}
-                        {activeTab !== 1 && (
-                            <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '85%' }}>
-                                <div className={`w-20 h-20 rounded-lg border-4 flex items-center justify-center shadow-lg ${activeTab === 3 ? 'bg-purple-900/30 border-purple-600 shadow-purple-900/20' : 'bg-orange-900/30 border-orange-600 shadow-orange-900/20'}`}>
-                                    {activeTab === 3 ? <Bot size={32} className="text-purple-400" /> : <Brain size={32} className="text-orange-400" />}
+                            {/* Description Box (Request 1) */}
+                            <div className="mb-4 bg-slate-800/80 border-l-4 border-blue-500 rounded-r-lg p-4 shadow-lg backdrop-blur-sm">
+                                <div className="flex items-start gap-3">
+                                    <Info className="text-blue-400 flex-shrink-0 mt-1" size={20} />
+                                    <p className="text-slate-200 text-sm md:text-base leading-relaxed">
+                                        {currentScenario.description}
+                                    </p>
                                 </div>
-                                {activeTab === 3 && (step === 1) && (
-                                    <div className="absolute -top-8 animate-bounce text-purple-400">
-                                        <Settings size={24} />
+                            </div>
+
+                            {/* Simulation Canvas */}
+                            <div className="flex-grow relative bg-slate-900 rounded-xl border border-slate-700 shadow-2xl overflow-hidden">
+
+                                {/* Stations */}
+                                {/* User Desk */}
+                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '50%' }}>
+                                    <div className="w-16 h-16 md:w-24 md:h-24 bg-slate-800 rounded-full border-4 border-slate-600 flex items-center justify-center shadow-lg">
+                                        <Monitor size={32} className="text-slate-400" />
+                                    </div>
+                                    <span className="mt-2 text-xs md:text-sm font-bold text-slate-400 bg-slate-900/90 px-2 py-1 rounded-full border border-slate-700">Schreibtisch</span>
+                                </div>
+
+                                {/* System / ERP */}
+                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '20%', left: '20%' }}>
+                                    <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-900/30 rounded-lg border-4 border-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/20">
+                                        <Database size={28} className="text-emerald-500" />
+                                    </div>
+                                    <span className="mt-2 text-xs md:text-sm font-bold text-emerald-500 bg-slate-900/90 px-2 py-1 rounded-full border border-slate-700">ERP</span>
+                                </div>
+
+                                {/* Email / Outlook */}
+                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '20%', left: '80%' }}>
+                                    <div className="w-16 h-16 md:w-20 md:h-20 bg-sky-900/30 rounded-lg border-4 border-sky-700 flex items-center justify-center shadow-lg shadow-sky-900/20">
+                                        <Mail size={28} className="text-sky-500" />
+                                    </div>
+                                    <span className="mt-2 text-xs md:text-sm font-bold text-sky-500 bg-slate-900/90 px-2 py-1 rounded-full border border-slate-700">Outlook</span>
+                                </div>
+
+                                {/* AI Station */}
+                                {activeTab !== 1 && (
+                                    <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '85%' }}>
+                                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-lg border-4 flex items-center justify-center shadow-lg ${activeTab === 3 ? 'bg-purple-900/30 border-purple-600 shadow-purple-900/20' : 'bg-orange-900/30 border-orange-600 shadow-orange-900/20'}`}>
+                                            {activeTab === 3 ? <Bot size={28} className="text-purple-400" /> : <Brain size={28} className="text-orange-400" />}
+                                        </div>
+                                        {activeTab === 3 && (step === 1) && (
+                                            <div className="absolute -top-8 animate-bounce text-purple-400">
+                                                <Settings size={20} />
+                                            </div>
+                                        )}
+                                        <span className={`mt-2 text-xs md:text-sm font-bold bg-slate-900/90 px-2 py-1 rounded-full border border-slate-700 ${activeTab === 3 ? 'text-purple-400' : 'text-orange-400'}`}>
+                                            {activeTab === 3 ? 'Agent' : 'ChatGPT'}
+                                        </span>
                                     </div>
                                 )}
-                                <span className={`mt-2 text-sm font-bold bg-slate-900/90 px-3 py-1 rounded-full border border-slate-700 ${activeTab === 3 ? 'text-purple-400' : 'text-orange-400'}`}>
-                                    {activeTab === 3 ? 'Agenten Basis' : 'ChatGPT (Web)'}
-                                </span>
-                            </div>
-                        )}
 
-                        {/* Moving Characters */}
+                                {/* Moving Characters */}
+                                {/* User Character */}
+                                <div
+                                    className="absolute transition-all duration-700 ease-in-out z-20 flex flex-col items-center"
+                                    style={{
+                                        ...getPosStyle(currentStepData.userPos),
+                                        transform: 'translate(-50%, -50%)'
+                                    }}
+                                >
+                                    <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-blue-500/20">
+                                        <User size={20} />
+                                    </div>
+                                    {/* User Bubble */}
+                                    {currentStepData.bubble && !currentStepData.showAgent && (
+                                        <div className="absolute bottom-12 md:bottom-14 w-40 md:w-48 bg-slate-800 p-2 md:p-3 rounded-xl shadow-2xl border border-slate-600 text-xs text-center animate-bounce text-slate-200 z-50">
+                                            {currentStepData.bubble}
+                                            <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
+                                        </div>
+                                    )}
+                                    {/* Special Bubble for User when Agent is present (Stage 3) */}
+                                    {currentStepData.bubble && currentStepData.showAgent && !currentStepData.bubble.startsWith("Agent") && !currentStepData.bubble.startsWith("System") && !currentStepData.bubble.startsWith("Ding") && (
+                                        <div className="absolute bottom-12 md:bottom-14 w-40 md:w-48 bg-slate-800 p-2 md:p-3 rounded-xl shadow-2xl border border-slate-600 text-xs text-center animate-bounce text-slate-200 z-50">
+                                            {currentStepData.bubble}
+                                            <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
+                                        </div>
+                                    )}
+                                </div>
 
-                        {/* User Character */}
-                        <div
-                            className="absolute transition-all duration-700 ease-in-out z-20 flex flex-col items-center"
-                            style={{
-                                ...getPosStyle(currentStepData.userPos),
-                                transform: 'translate(-50%, -50%)'
-                            }}
-                        >
-                            <div className="w-12 h-12 bg-blue-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-blue-500/20">
-                                <User size={24} />
-                            </div>
-                            {/* User Bubble */}
-                            {currentStepData.bubble && !currentStepData.showAgent && (
-                                <div className="absolute bottom-14 w-48 bg-slate-800 p-3 rounded-xl shadow-2xl border border-slate-600 text-xs text-center animate-bounce text-slate-200">
-                                    {currentStepData.bubble}
-                                    <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
-                                </div>
-                            )}
-                            {/* Special Bubble for User when Agent is present (Stage 3) */}
-                            {currentStepData.bubble && currentStepData.showAgent && !currentStepData.bubble.startsWith("Agent") && !currentStepData.bubble.startsWith("System") && !currentStepData.bubble.startsWith("Ding") && (
-                                <div className="absolute bottom-14 w-48 bg-slate-800 p-3 rounded-xl shadow-2xl border border-slate-600 text-xs text-center animate-bounce text-slate-200">
-                                    {currentStepData.bubble}
-                                    <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Agent Character (Only visible in Stage 3 or as target in Stage 2) */}
-                        {currentStepData.showAgent && (
-                            <div
-                                className="absolute transition-all duration-700 ease-in-out z-20 flex flex-col items-center"
-                                style={{
-                                    ...getPosStyle(currentStepData.agentPos),
-                                    transform: 'translate(-50%, -50%)' // Slightly offset so they don't perfectly overlap if at same spot
-                                }}
-                            >
-                                <div className="w-12 h-12 bg-purple-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-purple-500/20">
-                                    <Bot size={24} />
-                                </div>
-                                {/* Agent Bubble */}
-                                {currentStepData.bubble && (currentStepData.bubble.startsWith("Agent") || currentStepData.bubble.startsWith("System") || currentStepData.bubble.startsWith("Ding")) && (
-                                    <div className="absolute bottom-14 w-48 bg-purple-900 p-3 rounded-xl shadow-2xl border border-purple-500 text-xs text-center font-semibold text-purple-100 animate-pulse">
-                                        {currentStepData.bubble}
-                                        <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-purple-900 border-r border-b border-purple-500 rotate-45"></div>
+                                {/* Agent Character */}
+                                {currentStepData.showAgent && (
+                                    <div
+                                        className="absolute transition-all duration-700 ease-in-out z-20 flex flex-col items-center"
+                                        style={{
+                                            ...getPosStyle(currentStepData.agentPos),
+                                            transform: 'translate(-50%, -50%)'
+                                        }}
+                                    >
+                                        <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-purple-500/20">
+                                            <Bot size={20} />
+                                        </div>
+                                        {/* Agent Bubble */}
+                                        {currentStepData.bubble && (currentStepData.bubble.startsWith("Agent") || currentStepData.bubble.startsWith("System") || currentStepData.bubble.startsWith("Ding")) && (
+                                            <div className="absolute bottom-12 md:bottom-14 w-40 md:w-48 bg-purple-900 p-2 md:p-3 rounded-xl shadow-2xl border border-purple-500 text-xs text-center font-semibold text-purple-100 animate-pulse z-50">
+                                                {currentStepData.bubble}
+                                                <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-purple-900 border-r border-b border-purple-500 rotate-45"></div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
+
                             </div>
-                        )}
+                        </div>
+
+                        {/* Right Column: Step History Sidebar (Request 2) */}
+                        <div className="w-full md:w-80 flex-shrink-0 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden shadow-xl">
+                            <div className="p-4 border-b border-slate-800 bg-slate-900/50">
+                                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                                    Ablauf ({step + 1} / {currentScenario.steps.length})
+                                </h2>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                {currentScenario.steps.map((s, index) => {
+                                    // Only show steps up to current step (Request 2 - "aufbauen")
+                                    if (index > step) return null;
+
+                                    const isCurrent = index === step;
+                                    const isPast = index < step;
+
+                                    return (
+                                        <div
+                                            key={index}
+                                            onClick={() => jumpToStep(index)}
+                                            className={`relative p-3 rounded-lg border text-sm cursor-pointer transition-all duration-200 ${isCurrent
+                                                    ? 'bg-blue-900/20 border-blue-500 text-blue-100 shadow-md transform scale-102'
+                                                    : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                                }`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 ${isCurrent ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'
+                                                    }`}>
+                                                    {index + 1}
+                                                </div>
+                                                <div>
+                                                    {s.text}
+                                                </div>
+                                            </div>
+                                            {isPast && (
+                                                <div className="absolute top-2 right-2 opacity-0 hover:opacity-100">
+                                                    <div className="text-xs bg-slate-700 text-white px-2 py-1 rounded">Zurück</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                                <div ref={stepsEndRef} />
+                            </div>
+                        </div>
 
                     </div>
 
-                    {/* Control Panel */}
-                    <div className="bg-slate-900 border-t border-slate-800 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-
-                        <div className="flex-1">
-                            <div className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">
-                                Aktueller Schritt ({step + 1} / {currentScenario.steps.length})
-                            </div>
-                            <div className="text-lg text-slate-200 font-medium leading-snug">
-                                {currentStepData.text}
-                            </div>
-                        </div>
+                    {/* Footer Control Panel */}
+                    <div className="bg-slate-900 border-t border-slate-800 p-4 md:p-6 flex flex-col items-center justify-center">
 
                         <div>
                             {!currentStepData.isDone ? (
                                 <button
                                     onClick={handleNext}
                                     disabled={isAnimating}
-                                    className="group flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/40 transform transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                    className="group flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 md:py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/40 transform transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none w-full md:w-auto justify-center"
                                 >
                                     {currentStepData.action}
                                     <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                             ) : (
-                                <button
-                                    disabled
-                                    className="flex items-center gap-2 bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-green-900/40 opacity-90"
-                                >
-                                    Szenario beendet <CheckCircle size={20} />
-                                </button>
+                                // End of Scenario Button (Request 3)
+                                activeTab < 3 ? (
+                                    <button
+                                        onClick={handleNextScenario}
+                                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-8 py-3 md:py-4 rounded-xl font-bold text-lg shadow-lg shadow-purple-900/40 animate-pulse"
+                                    >
+                                        Nächstes Szenario starten <ArrowRight size={20} />
+                                    </button>
+                                ) : (
+                                    <button
+                                        disabled
+                                        className="flex items-center gap-2 bg-green-600 text-white px-8 py-3 md:py-4 rounded-xl font-bold text-lg shadow-lg shadow-green-900/40 opacity-90 cursor-default"
+                                    >
+                                        Simulation beendet <CheckCircle size={20} />
+                                    </button>
+                                )
                             )}
                         </div>
 
