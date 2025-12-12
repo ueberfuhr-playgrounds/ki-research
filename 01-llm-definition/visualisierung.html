@@ -516,13 +516,13 @@
             const content = `DIE ULTIMATIVE PROMPT-CHECKLISTE
 
 --- DIE 4 BAUSTEINE ---
-1. ROLLE (Wer?): "Du bist ein erfahrener [Beruf]..."
-2. AUFGABE (Was?): "Erstelle / Schreibe / Fasse zusammen..."
-3. KONTEXT (Hintergrund?): "Es geht um [Zielgruppe/Situation]..."
-4. FORMAT (Wie?): "Als Tabelle / Kurz / Per Du..."
+ROLLE (Wer?): "Du bist ein erfahrener [Beruf]..."
+AUFGABE (Was?): "Erstelle / Schreibe / Fasse zusammen..."
+KONTEXT (Hintergrund?): "Es geht um [Zielgruppe/Situation]..."
+FORMAT (Wie?): "Als Tabelle / Kurz / Per Du..."
 
 --- SICHERHEITS-CHECK ---
-5. DATENSCHUTZ: Keine echten Namen oder Kundendaten verwenden! (Nutze "Herr X", "Kunde A")`;
+DATENSCHUTZ: Keine echten Namen oder Kundendaten verwenden! (Nutze "Herr X", "Kunde A")`;
 
             const copyToClipboard = async () => {
                 const textToCopy = content;
@@ -586,19 +586,22 @@
                             <div>
                                 <h3 className="text-slate-500 font-bold text-sm tracking-widest uppercase mb-4 border-b border-slate-700 pb-2">Die 4 Bausteine</h3>
                                 <ul className="space-y-2">
-                                    <li><span className="text-purple-400 font-bold">1. ROLLE:</span> Wer soll die KI sein?</li>
-                                    <li><span className="text-blue-400 font-bold">2. AUFGABE:</span> Was genau soll sie tun?</li>
-                                    <li><span className="text-yellow-400 font-bold">3. KONTEXT:</span> Welche Hintergrundinfos fehlen?</li>
-                                    <li><span className="text-emerald-400 font-bold">4. FORMAT:</span> Wie soll das Ergebnis aussehen?</li>
+                                    <li><span className="text-purple-400 font-bold">ROLLE:</span> Wer soll die KI sein?</li>
+                                    <li><span className="text-purple-400 font-bold">AUFGABE:</span> Was genau soll sie tun?</li>
+                                    <li><span className="text-purple-400 font-bold">KONTEXT:</span> Welche Hintergrundinfos fehlen?</li>
+                                    <li><span className="text-purple-400 font-bold">FORMAT:</span> Wie soll das Ergebnis aussehen?</li>
                                 </ul>
                             </div>
 
                             <div>
-                                <h3 className="text-slate-500 font-bold text-sm tracking-widest uppercase mb-4 border-b border-slate-700 pb-2">Sicherheits-Check</h3>
-                                <div className="flex items-start gap-3 text-red-300 bg-red-900/20 p-4 rounded-lg border border-red-900/50">
-                                    <AlertTriangle size={24} className="shrink-0 mt-1" />
-                                    <span><strong>5. DATENSCHUTZ:</strong> Habe ich alle echten Namen und Kundendaten entfernt?</span>
-                                </div>
+                                <h3 className="text-slate-500 font-bold text-sm tracking-widest uppercase mb-4 border-b border-slate-700 pb-2 flex items-center gap-2">
+                                    <AlertTriangle size={16} className="text-yellow-400" /> Sicherheits-Check
+                                </h3>
+                                <ul className="space-y-2">
+                                    <li>
+                                        <span className="text-red-400 font-bold">DATENSCHUTZ:</span> Habe ich alle echten Namen und Kundendaten entfernt?
+                                    </li>
+                                </ul>
                             </div>
 
                         </div>
