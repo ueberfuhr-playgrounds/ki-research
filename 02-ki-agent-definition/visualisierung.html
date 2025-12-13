@@ -22,12 +22,12 @@
             margin: 0;
             overflow: hidden;
             overscroll-behavior: none;
+            background-color: #0f172a;
         }
 
         /* Custom Scrollbar für die Sidebar */
         ::-webkit-scrollbar {
             width: 4px;
-            /* Noch schmaler für Mobile */
             height: 4px;
         }
 
@@ -159,12 +159,13 @@
             const [isAnimating, setIsAnimating] = useState(false);
             const stepsEndRef = useRef(null);
 
-            // Positionen angepasst für kleineren mobilen Bereich
+            // Optimierte Positionen für Mobile:
+            // System und Email weiter nach unten (45%), damit sie nicht vom Infotext verdeckt werden.
             const positions = {
-                desk: { top: '70%', left: '50%' },
-                system: { top: '35%', left: '20%' },
-                email: { top: '35%', left: '80%' },
-                ai: { top: '70%', left: '80%' },
+                desk: { top: '75%', left: '50%' },
+                system: { top: '45%', left: '20%' },   // Deutlich tiefer
+                email: { top: '45%', left: '80%' },    // Deutlich tiefer
+                ai: { top: '75%', left: '80%' },
             };
 
             const scenarios = {
@@ -433,26 +434,28 @@
 
             if (!hasStarted) {
                 return (
-                    <div className="flex flex-col h-screen bg-slate-950 font-sans text-slate-100 items-center justify-center p-4">
-                        <div className="max-w-2xl w-full bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 p-6 md:p-8 text-center relative overflow-hidden">
+                    // H-screen korrigiert zu h-[100dvh] für Mobile Browser
+                    <div className="flex flex-col h-[100dvh] bg-slate-950 font-sans text-slate-100 items-center justify-center p-4">
+                        <div className="max-w-2xl w-full bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 p-6 md:p-8 text-center relative overflow-hidden flex flex-col max-h-full overflow-y-auto">
                             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-purple-600"></div>
 
-                            <div className="flex justify-center mb-6 space-x-4">
+                            <div className="flex justify-center mb-6 space-x-4 flex-shrink-0 mt-4">
                                 <Monitor size={40} className="text-blue-400 md:w-12 md:h-12" />
                                 <ArrowRight size={40} className="text-slate-600 md:w-12 md:h-12" />
                                 <Bot size={40} className="text-purple-400 md:w-12 md:h-12" />
                             </div>
 
-                            <h1 className="text-2xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-300">
+                            {/* Hellerer Titel */}
+                            <h1 className="text-2xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-100 to-purple-100 flex-shrink-0">
                                 Vom LLM zum KI-Agenten
                             </h1>
 
-                            <p className="text-sm md:text-xl text-slate-300 mb-6 md:mb-8 leading-relaxed">
+                            <p className="text-sm md:text-xl text-slate-300 mb-6 md:mb-8 leading-relaxed flex-shrink-0">
                                 Erlebe in dieser interaktiven Simulation, wie sich die Arbeit verändert:
                                 Vom stressigen manuellen "Turnschuh-Admin" zum effizienten KI-Manager.
                             </p>
 
-                            <div className="bg-slate-800 rounded-xl p-4 md:p-6 mb-6 md:mb-8 text-left border border-slate-700">
+                            <div className="bg-slate-800 rounded-xl p-4 md:p-6 mb-6 md:mb-8 text-left border border-slate-700 flex-shrink-0">
                                 <h3 className="text-base md:text-lg font-semibold text-slate-200 mb-2">Das Szenario:</h3>
                                 <p className="text-xs md:text-base text-slate-400">
                                     Ein Kunde fragt per E-Mail nach dem Status seiner Bestellung <span className="text-blue-400 font-mono">#123</span>.
@@ -462,7 +465,7 @@
 
                             <button
                                 onClick={() => setHasStarted(true)}
-                                className="group relative inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 font-bold text-white transition-all duration-200 bg-blue-600 rounded-full hover:bg-blue-500 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 focus:ring-offset-slate-900 text-sm md:text-base"
+                                className="group relative inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 font-bold text-white transition-all duration-200 bg-blue-600 rounded-full hover:bg-blue-500 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 focus:ring-offset-slate-900 text-sm md:text-base flex-shrink-0 mb-4"
                             >
                                 <Play className="mr-2 fill-current" size={20} />
                                 Simulation starten
@@ -473,12 +476,14 @@
             }
 
             return (
-                <div className="flex flex-col h-screen bg-slate-950 font-sans text-slate-200 overflow-hidden">
+                // H-screen korrigiert zu h-[100dvh] für Mobile Browser
+                <div className="flex flex-col h-[100dvh] bg-slate-950 font-sans text-slate-200 overflow-hidden">
 
                     {/* Header */}
                     <div className="bg-slate-900 shadow-md border-b border-slate-800 p-2 md:p-4 z-10 flex-shrink-0">
                         <div className="flex justify-between items-center mb-1 md:mb-2">
-                            <h1 className="text-base md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-300 truncate pr-2">
+                            {/* Hellerer Titel */}
+                            <h1 className="text-base md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-100 to-purple-100 truncate pr-2">
                                 KI-Workflow-Simulation
                             </h1>
                             <button onClick={() => setHasStarted(false)} className="text-[10px] md:text-xs text-slate-500 hover:text-slate-300 whitespace-nowrap">Startseite</button>
@@ -507,15 +512,15 @@
                     <div className="flex-grow flex flex-col md:flex-row gap-2 md:gap-4 p-2 md:p-4 overflow-hidden min-h-0">
 
                         {/* Simulation Canvas Area */}
-                        {/* Mobile: Feste Höhe von 240px, damit Platz für Sidebar bleibt. Desktop: Flex-1 */}
-                        <div className="flex-none h-[240px] md:h-auto md:flex-1 relative bg-slate-900 rounded-xl border border-slate-700 shadow-2xl overflow-hidden order-1">
+                        {/* Mobile: Kleinere feste Höhe (h-56 = 224px), damit Platz für Sidebar bleibt. Desktop: Flex-1 */}
+                        <div className="flex-none h-56 md:h-auto md:flex-1 relative bg-slate-900 rounded-xl border border-slate-700 shadow-2xl overflow-hidden order-1">
 
                             {/* Description Overlay */}
                             <div className="absolute top-2 left-2 right-2 z-30 pointer-events-none">
                                 <div className="bg-slate-800/90 border-l-4 border-blue-500 rounded p-2 md:p-3 shadow-lg backdrop-blur-sm pointer-events-auto">
                                     <div className="flex items-start gap-2">
                                         <Info className="text-blue-400 flex-shrink-0 mt-0.5" size={16} />
-                                        <p className="text-slate-200 text-xs md:text-sm leading-snug">
+                                        <p className="text-slate-200 text-[10px] md:text-sm leading-snug">
                                             {currentScenario.description}
                                         </p>
                                     </div>
@@ -526,7 +531,7 @@
                             <div className="w-full h-full relative">
                                 {/* Stations */}
                                 {/* User Desk */}
-                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '50%' }}>
+                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300" style={getPosStyle('desk')}>
                                     <div className="w-12 h-12 md:w-24 md:h-24 bg-slate-800 rounded-full border-4 border-slate-600 flex items-center justify-center shadow-lg transition-all duration-300">
                                         <Monitor className="text-slate-400 w-5 h-5 md:w-10 md:h-10" />
                                     </div>
@@ -534,7 +539,7 @@
                                 </div>
 
                                 {/* System / ERP */}
-                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '35%', left: '20%' }}>
+                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300" style={getPosStyle('system')}>
                                     <div className="w-12 h-12 md:w-20 md:h-20 bg-emerald-900/30 rounded-lg border-4 border-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/20 transition-all duration-300">
                                         <Database className="text-emerald-500 w-5 h-5 md:w-8 md:h-8" />
                                     </div>
@@ -542,7 +547,7 @@
                                 </div>
 
                                 {/* Email / Outlook */}
-                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '35%', left: '80%' }}>
+                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300" style={getPosStyle('email')}>
                                     <div className="w-12 h-12 md:w-20 md:h-20 bg-sky-900/30 rounded-lg border-4 border-sky-700 flex items-center justify-center shadow-lg shadow-sky-900/20 transition-all duration-300">
                                         <Mail className="text-sky-500 w-5 h-5 md:w-8 md:h-8" />
                                     </div>
@@ -551,7 +556,7 @@
 
                                 {/* AI Station */}
                                 {activeTab !== 1 && (
-                                    <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '80%' }}>
+                                    <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300" style={getPosStyle('ai')}>
                                         <div className={`w-12 h-12 md:w-20 md:h-20 rounded-lg border-4 flex items-center justify-center shadow-lg transition-all duration-300 ${activeTab === 3 ? 'bg-purple-900/30 border-purple-600 shadow-purple-900/20' : 'bg-orange-900/30 border-orange-600 shadow-orange-900/20'}`}>
                                             {activeTab === 3 ? <Bot className="text-purple-400 w-5 h-5 md:w-8 md:h-8" /> : <Brain className="text-orange-400 w-5 h-5 md:w-8 md:h-8" />}
                                         </div>
@@ -666,7 +671,7 @@
                     </div>
 
                     {/* Footer Control Panel */}
-                    <div className="bg-slate-900 border-t border-slate-800 p-3 md:p-6 flex flex-col items-center justify-center flex-shrink-0 z-20">
+                    <div className="bg-slate-900 border-t border-slate-800 p-3 md:p-6 flex flex-col items-center justify-center flex-shrink-0 z-20 pb-safe">
 
                         <div className="w-full md:w-auto">
                             {!currentStepData.isDone ? (
