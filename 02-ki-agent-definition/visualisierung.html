@@ -26,8 +26,9 @@
 
         /* Custom Scrollbar für die Sidebar */
         ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 4px;
+            /* Noch schmaler für Mobile */
+            height: 4px;
         }
 
         ::-webkit-scrollbar-track {
@@ -158,19 +159,17 @@
             const [isAnimating, setIsAnimating] = useState(false);
             const stepsEndRef = useRef(null);
 
-            // Positionen anpassen für Mobile/Desktop wenn nötig, 
-            // aber Prozentwerte funktionieren meist gut responsiv.
-            // Positionen für die Animation (hier müssen die Werte mit den Style-Werten unten übereinstimmen)
+            // Positionen angepasst für kleineren mobilen Bereich
             const positions = {
                 desk: { top: '70%', left: '50%' },
-                system: { top: '35%', left: '20%' },   // Weiter unten platziert (von 20% auf 35%)
-                email: { top: '35%', left: '80%' },    // Weiter unten platziert (von 20% auf 35%)
-                ai: { top: '70%', left: '80%' }, // Etwas weiter links für Mobile Safety (vorher 85%)
+                system: { top: '35%', left: '20%' },
+                email: { top: '35%', left: '80%' },
+                ai: { top: '70%', left: '80%' },
             };
 
             const scenarios = {
                 1: {
-                    title: "Stufe 1: Manuell",
+                    title: "Manuell",
                     description: "Der User macht alles selbst. Hoher manueller Aufwand und viele Laufwege.",
                     steps: [
                         {
@@ -230,7 +229,7 @@
                     ]
                 },
                 2: {
-                    title: "Stufe 2: Mit LLM",
+                    title: "Mit LLM",
                     description: "Der User nutzt KI zum Texten, muss aber die Daten selbst als 'Kurier' transportieren.",
                     steps: [
                         {
@@ -299,7 +298,7 @@
                     ]
                 },
                 3: {
-                    title: "Stufe 3: Mit KI-Agent",
+                    title: "Mit Agent",
                     description: "Der User delegiert. Der Agent arbeitet autonom über Systemgrenzen hinweg.",
                     steps: [
                         {
@@ -444,7 +443,7 @@
                                 <Bot size={40} className="text-purple-400 md:w-12 md:h-12" />
                             </div>
 
-                            <h1 className="text-2xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                            <h1 className="text-2xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-300">
                                 Vom LLM zum KI-Agenten
                             </h1>
 
@@ -477,35 +476,39 @@
                 <div className="flex flex-col h-screen bg-slate-950 font-sans text-slate-200 overflow-hidden">
 
                     {/* Header */}
-                    <div className="bg-slate-900 shadow-md border-b border-slate-800 p-3 md:p-4 z-10 flex-shrink-0">
-                        <div className="flex justify-between items-center mb-2">
-                            <h1 className="text-lg md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                                Simulation: KI-Workflow
+                    <div className="bg-slate-900 shadow-md border-b border-slate-800 p-2 md:p-4 z-10 flex-shrink-0">
+                        <div className="flex justify-between items-center mb-1 md:mb-2">
+                            <h1 className="text-base md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-300 truncate pr-2">
+                                KI-Workflow-Simulation
                             </h1>
-                            <button onClick={() => setHasStarted(false)} className="text-xs text-slate-500 hover:text-slate-300">Startseite</button>
+                            <button onClick={() => setHasStarted(false)} className="text-[10px] md:text-xs text-slate-500 hover:text-slate-300 whitespace-nowrap">Startseite</button>
                         </div>
 
-                        <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
+                        <div className="flex justify-center md:justify-start gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
                             {[1, 2, 3].map((num) => (
                                 <button
                                     key={num}
                                     onClick={() => handleTabChange(num)}
-                                    className={`whitespace-nowrap px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all duration-200 ${activeTab === num
+                                    className={`whitespace-nowrap px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all duration-200 flex-shrink-0 flex items-center gap-2 ${activeTab === num
                                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
                                             : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200 border border-slate-700'
                                         }`}
                                 >
-                                    {scenarios[num].title}
+                                    <span className={`flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full text-[10px] font-bold ${activeTab === num ? 'bg-white text-blue-600' : 'bg-slate-700 text-slate-300'}`}>
+                                        {num}
+                                    </span>
+                                    <span>{scenarios[num].title}</span>
                                 </button>
                             ))}
                         </div>
                     </div>
 
                     {/* Responsive Layout Container */}
-                    <div className="flex-grow flex flex-col md:flex-row gap-4 p-2 md:p-4 overflow-hidden">
+                    <div className="flex-grow flex flex-col md:flex-row gap-2 md:gap-4 p-2 md:p-4 overflow-hidden min-h-0">
 
                         {/* Simulation Canvas Area */}
-                        <div className="flex-1 flex flex-col min-h-[300px] md:min-h-0 relative bg-slate-900 rounded-xl border border-slate-700 shadow-2xl overflow-hidden order-1">
+                        {/* Mobile: Feste Höhe von 240px, damit Platz für Sidebar bleibt. Desktop: Flex-1 */}
+                        <div className="flex-none h-[240px] md:h-auto md:flex-1 relative bg-slate-900 rounded-xl border border-slate-700 shadow-2xl overflow-hidden order-1">
 
                             {/* Description Overlay */}
                             <div className="absolute top-2 left-2 right-2 z-30 pointer-events-none">
@@ -524,24 +527,24 @@
                                 {/* Stations */}
                                 {/* User Desk */}
                                 <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '50%' }}>
-                                    <div className="w-14 h-14 md:w-24 md:h-24 bg-slate-800 rounded-full border-4 border-slate-600 flex items-center justify-center shadow-lg transition-all duration-300">
-                                        <Monitor className="text-slate-400 w-6 h-6 md:w-10 md:h-10" />
+                                    <div className="w-12 h-12 md:w-24 md:h-24 bg-slate-800 rounded-full border-4 border-slate-600 flex items-center justify-center shadow-lg transition-all duration-300">
+                                        <Monitor className="text-slate-400 w-5 h-5 md:w-10 md:h-10" />
                                     </div>
                                     <span className="mt-1 md:mt-2 text-[10px] md:text-sm font-bold text-slate-400 bg-slate-900/90 px-2 py-0.5 rounded-full border border-slate-700">Platz</span>
                                 </div>
 
                                 {/* System / ERP */}
                                 <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '35%', left: '20%' }}>
-                                    <div className="w-14 h-14 md:w-20 md:h-20 bg-emerald-900/30 rounded-lg border-4 border-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/20 transition-all duration-300">
-                                        <Database className="text-emerald-500 w-6 h-6 md:w-8 md:h-8" />
+                                    <div className="w-12 h-12 md:w-20 md:h-20 bg-emerald-900/30 rounded-lg border-4 border-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/20 transition-all duration-300">
+                                        <Database className="text-emerald-500 w-5 h-5 md:w-8 md:h-8" />
                                     </div>
                                     <span className="mt-1 md:mt-2 text-[10px] md:text-sm font-bold text-emerald-500 bg-slate-900/90 px-2 py-0.5 rounded-full border border-slate-700">ERP</span>
                                 </div>
 
                                 {/* Email / Outlook */}
                                 <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '35%', left: '80%' }}>
-                                    <div className="w-14 h-14 md:w-20 md:h-20 bg-sky-900/30 rounded-lg border-4 border-sky-700 flex items-center justify-center shadow-lg shadow-sky-900/20 transition-all duration-300">
-                                        <Mail className="text-sky-500 w-6 h-6 md:w-8 md:h-8" />
+                                    <div className="w-12 h-12 md:w-20 md:h-20 bg-sky-900/30 rounded-lg border-4 border-sky-700 flex items-center justify-center shadow-lg shadow-sky-900/20 transition-all duration-300">
+                                        <Mail className="text-sky-500 w-5 h-5 md:w-8 md:h-8" />
                                     </div>
                                     <span className="mt-1 md:mt-2 text-[10px] md:text-sm font-bold text-sky-500 bg-slate-900/90 px-2 py-0.5 rounded-full border border-slate-700">Outlook</span>
                                 </div>
@@ -549,11 +552,11 @@
                                 {/* AI Station */}
                                 {activeTab !== 1 && (
                                     <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '80%' }}>
-                                        <div className={`w-14 h-14 md:w-20 md:h-20 rounded-lg border-4 flex items-center justify-center shadow-lg transition-all duration-300 ${activeTab === 3 ? 'bg-purple-900/30 border-purple-600 shadow-purple-900/20' : 'bg-orange-900/30 border-orange-600 shadow-orange-900/20'}`}>
-                                            {activeTab === 3 ? <Bot className="text-purple-400 w-6 h-6 md:w-8 md:h-8" /> : <Brain className="text-orange-400 w-6 h-6 md:w-8 md:h-8" />}
+                                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-lg border-4 flex items-center justify-center shadow-lg transition-all duration-300 ${activeTab === 3 ? 'bg-purple-900/30 border-purple-600 shadow-purple-900/20' : 'bg-orange-900/30 border-orange-600 shadow-orange-900/20'}`}>
+                                            {activeTab === 3 ? <Bot className="text-purple-400 w-5 h-5 md:w-8 md:h-8" /> : <Brain className="text-orange-400 w-5 h-5 md:w-8 md:h-8" />}
                                         </div>
                                         {activeTab === 3 && (step === 1) && (
-                                            <div className="absolute -top-6 md:-top-8 animate-bounce text-purple-400">
+                                            <div className="absolute -top-5 md:-top-8 animate-bounce text-purple-400">
                                                 <Settings className="w-4 h-4 md:w-6 md:h-6" />
                                             </div>
                                         )}
@@ -572,19 +575,19 @@
                                         transform: 'translate(-50%, -50%)'
                                     }}
                                 >
-                                    <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-blue-500/20">
-                                        <User className="w-5 h-5 md:w-6 md:h-6" />
+                                    <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-blue-500/20">
+                                        <User className="w-4 h-4 md:w-6 md:h-6" />
                                     </div>
                                     {/* User Bubble */}
                                     {currentStepData.bubble && !currentStepData.showAgent && (
-                                        <div className="absolute bottom-11 md:bottom-14 w-32 md:w-48 bg-slate-800 p-2 md:p-3 rounded-xl shadow-2xl border border-slate-600 text-[10px] md:text-xs text-center animate-bounce text-slate-200 z-50">
+                                        <div className="absolute bottom-9 md:bottom-14 w-28 md:w-48 bg-slate-800 p-1.5 md:p-3 rounded-xl shadow-2xl border border-slate-600 text-[10px] md:text-xs text-center animate-bounce text-slate-200 z-50">
                                             {currentStepData.bubble}
                                             <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-2 h-2 md:w-3 md:h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
                                         </div>
                                     )}
                                     {/* Special Bubble for User when Agent is present (Stage 3) */}
                                     {currentStepData.bubble && currentStepData.showAgent && !currentStepData.bubble.startsWith("Agent") && !currentStepData.bubble.startsWith("System") && !currentStepData.bubble.startsWith("Ding") && (
-                                        <div className="absolute bottom-11 md:bottom-14 w-32 md:w-48 bg-slate-800 p-2 md:p-3 rounded-xl shadow-2xl border border-slate-600 text-[10px] md:text-xs text-center animate-bounce text-slate-200 z-50">
+                                        <div className="absolute bottom-9 md:bottom-14 w-28 md:w-48 bg-slate-800 p-1.5 md:p-3 rounded-xl shadow-2xl border border-slate-600 text-[10px] md:text-xs text-center animate-bounce text-slate-200 z-50">
                                             {currentStepData.bubble}
                                             <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-2 h-2 md:w-3 md:h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
                                         </div>
@@ -600,12 +603,12 @@
                                             transform: 'translate(-50%, -50%)'
                                         }}
                                     >
-                                        <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-purple-500/20">
-                                            <Bot className="w-5 h-5 md:w-6 md:h-6" />
+                                        <div className="w-8 h-8 md:w-12 md:h-12 bg-purple-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-purple-500/20">
+                                            <Bot className="w-4 h-4 md:w-6 md:h-6" />
                                         </div>
                                         {/* Agent Bubble */}
                                         {currentStepData.bubble && (currentStepData.bubble.startsWith("Agent") || currentStepData.bubble.startsWith("System") || currentStepData.bubble.startsWith("Ding")) && (
-                                            <div className="absolute bottom-11 md:bottom-14 w-32 md:w-48 bg-purple-900 p-2 md:p-3 rounded-xl shadow-2xl border border-purple-500 text-[10px] md:text-xs text-center font-semibold text-purple-100 animate-pulse z-50">
+                                            <div className="absolute bottom-9 md:bottom-14 w-28 md:w-48 bg-purple-900 p-1.5 md:p-3 rounded-xl shadow-2xl border border-purple-500 text-[10px] md:text-xs text-center font-semibold text-purple-100 animate-pulse z-50">
                                                 {currentStepData.bubble}
                                                 <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-2 h-2 md:w-3 md:h-3 bg-purple-900 border-r border-b border-purple-500 rotate-45"></div>
                                             </div>
@@ -617,13 +620,14 @@
                         </div>
 
                         {/* Sidebar: Step History */}
-                        <div className="w-full h-1/3 md:h-auto md:w-80 flex-shrink-0 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden shadow-xl order-2">
-                            <div className="p-3 border-b border-slate-800 bg-slate-900/50">
-                                <h2 className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-widest">
+                        {/* Mobile: Nimmt den REST der Höhe (flex-1) und erlaubt Scrollen (min-h-0) */}
+                        <div className="flex-1 md:w-80 md:flex-none flex-shrink-0 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden shadow-xl order-2 min-h-0">
+                            <div className="p-2 md:p-3 border-b border-slate-800 bg-slate-900/50 flex-shrink-0">
+                                <h2 className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-widest">
                                     Ablauf ({step + 1} / {currentScenario.steps.length})
                                 </h2>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2 md:space-y-3">
+                            <div className="flex-1 overflow-y-auto p-2 md:p-3 space-y-2 md:space-y-3">
                                 {currentScenario.steps.map((s, index) => {
                                     if (index > step) return null;
                                     const isCurrent = index === step;
@@ -662,7 +666,7 @@
                     </div>
 
                     {/* Footer Control Panel */}
-                    <div className="bg-slate-900 border-t border-slate-800 p-3 md:p-6 flex flex-col items-center justify-center flex-shrink-0">
+                    <div className="bg-slate-900 border-t border-slate-800 p-3 md:p-6 flex flex-col items-center justify-center flex-shrink-0 z-20">
 
                         <div className="w-full md:w-auto">
                             {!currentStepData.isDone ? (
