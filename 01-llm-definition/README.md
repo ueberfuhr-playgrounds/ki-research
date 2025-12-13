@@ -28,3 +28,6 @@
 ## Ergebnisse
 
 - [Visualisierung](visualisierung.html)
+
+> [!TIP]
+> Dieses [Video (Youtube)](https://youtu.be/cDA3_5982h8?si=Mbfx8WD0_uDUtz4_) veranschaulicht die Problemstellung des Schreibens exakter Prompts auf amüsante Weise. 
