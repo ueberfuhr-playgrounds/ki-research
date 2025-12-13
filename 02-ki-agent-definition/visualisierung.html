@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Simulation: Vom LLM zum KI-Agenten</title>
 
     <!-- React & ReactDOM -->
@@ -17,14 +17,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
+        /* Verhindert Pull-to-Refresh und Bouncing auf Mobile */
         body {
             margin: 0;
             overflow: hidden;
+            overscroll-behavior: none;
         }
 
         /* Custom Scrollbar für die Sidebar */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
@@ -155,15 +158,16 @@
             const [isAnimating, setIsAnimating] = useState(false);
             const stepsEndRef = useRef(null);
 
-            // Definition der Positionen auf dem Spielfeld (in Prozent)
+            // Positionen anpassen für Mobile/Desktop wenn nötig, 
+            // aber Prozentwerte funktionieren meist gut responsiv.
+            // Positionen für die Animation (hier müssen die Werte mit den Style-Werten unten übereinstimmen)
             const positions = {
-                desk: { top: '70%', left: '50%' },     // User Schreibtisch (Mitte unten)
-                system: { top: '20%', left: '20%' },   // ERP / Excel (Links oben)
-                email: { top: '20%', left: '80%' },    // Outlook (Rechts oben)
-                ai: { top: '70%', left: '85%' },       // ChatGPT / Agent (Rechts unten)
+                desk: { top: '70%', left: '50%' },
+                system: { top: '35%', left: '20%' },   // Weiter unten platziert (von 20% auf 35%)
+                email: { top: '35%', left: '80%' },    // Weiter unten platziert (von 20% auf 35%)
+                ai: { top: '70%', left: '80%' }, // Etwas weiter links für Mobile Safety (vorher 85%)
             };
 
-            // Szenarien Konfiguration
             const scenarios = {
                 1: {
                     title: "Stufe 1: Manuell",
@@ -391,7 +395,6 @@
             const currentScenario = scenarios[activeTab];
             const currentStepData = currentScenario.steps[step];
 
-            // Auto-Scroll to bottom of steps list
             useEffect(() => {
                 if (stepsEndRef.current) {
                     stepsEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -424,37 +427,35 @@
                 }
             };
 
-            // Helper zum Berechnen der Position basierend auf dem String-Key
             const getPosStyle = (posKey) => {
                 const p = positions[posKey];
                 return { top: p.top, left: p.left };
             };
 
-            // Start Screen Component
             if (!hasStarted) {
                 return (
                     <div className="flex flex-col h-screen bg-slate-950 font-sans text-slate-100 items-center justify-center p-4">
-                        <div className="max-w-2xl w-full bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 p-8 text-center relative overflow-hidden">
+                        <div className="max-w-2xl w-full bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 p-6 md:p-8 text-center relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-purple-600"></div>
 
                             <div className="flex justify-center mb-6 space-x-4">
-                                <Monitor size={48} className="text-blue-400" />
-                                <ArrowRight size={48} className="text-slate-600" />
-                                <Bot size={48} className="text-purple-400" />
+                                <Monitor size={40} className="text-blue-400 md:w-12 md:h-12" />
+                                <ArrowRight size={40} className="text-slate-600 md:w-12 md:h-12" />
+                                <Bot size={40} className="text-purple-400 md:w-12 md:h-12" />
                             </div>
 
-                            <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                            <h1 className="text-2xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
                                 Vom LLM zum KI-Agenten
                             </h1>
 
-                            <p className="text-xl text-slate-300 mb-8 leading-relaxed">
+                            <p className="text-sm md:text-xl text-slate-300 mb-6 md:mb-8 leading-relaxed">
                                 Erlebe in dieser interaktiven Simulation, wie sich die Arbeit verändert:
                                 Vom stressigen manuellen "Turnschuh-Admin" zum effizienten KI-Manager.
                             </p>
 
-                            <div className="bg-slate-800 rounded-xl p-6 mb-8 text-left border border-slate-700">
-                                <h3 className="text-lg font-semibold text-slate-200 mb-2">Das Szenario:</h3>
-                                <p className="text-slate-400">
+                            <div className="bg-slate-800 rounded-xl p-4 md:p-6 mb-6 md:mb-8 text-left border border-slate-700">
+                                <h3 className="text-base md:text-lg font-semibold text-slate-200 mb-2">Das Szenario:</h3>
+                                <p className="text-xs md:text-base text-slate-400">
                                     Ein Kunde fragt per E-Mail nach dem Status seiner Bestellung <span className="text-blue-400 font-mono">#123</span>.
                                     Der Status ist im internen ERP-System zu finden.
                                 </p>
@@ -462,7 +463,7 @@
 
                             <button
                                 onClick={() => setHasStarted(true)}
-                                className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-blue-600 rounded-full hover:bg-blue-500 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 focus:ring-offset-slate-900"
+                                className="group relative inline-flex items-center justify-center px-6 py-3 md:px-8 md:py-4 font-bold text-white transition-all duration-200 bg-blue-600 rounded-full hover:bg-blue-500 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 focus:ring-offset-slate-900 text-sm md:text-base"
                             >
                                 <Play className="mr-2 fill-current" size={20} />
                                 Simulation starten
@@ -473,23 +474,23 @@
             }
 
             return (
-                <div className="flex flex-col h-screen bg-slate-950 font-sans text-slate-200">
+                <div className="flex flex-col h-screen bg-slate-950 font-sans text-slate-200 overflow-hidden">
 
                     {/* Header */}
-                    <div className="bg-slate-900 shadow-md border-b border-slate-800 p-4 z-10">
+                    <div className="bg-slate-900 shadow-md border-b border-slate-800 p-3 md:p-4 z-10 flex-shrink-0">
                         <div className="flex justify-between items-center mb-2">
-                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                            <h1 className="text-lg md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
                                 Simulation: KI-Workflow
                             </h1>
-                            <button onClick={() => setHasStarted(false)} className="text-xs text-slate-500 hover:text-slate-300">Zur Startseite</button>
+                            <button onClick={() => setHasStarted(false)} className="text-xs text-slate-500 hover:text-slate-300">Startseite</button>
                         </div>
 
-                        <div className="flex space-x-2">
+                        <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
                             {[1, 2, 3].map((num) => (
                                 <button
                                     key={num}
                                     onClick={() => handleTabChange(num)}
-                                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === num
+                                    className={`whitespace-nowrap px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all duration-200 ${activeTab === num
                                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
                                             : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200 border border-slate-700'
                                         }`}
@@ -500,62 +501,63 @@
                         </div>
                     </div>
 
-                    {/* Main Content Area: Flex Container for Game & Sidebar */}
-                    <div className="flex-grow flex flex-col md:flex-row gap-4 m-4 overflow-hidden">
+                    {/* Responsive Layout Container */}
+                    <div className="flex-grow flex flex-col md:flex-row gap-4 p-2 md:p-4 overflow-hidden">
 
-                        {/* Left Column: Game Area */}
-                        <div className="flex-1 flex flex-col min-w-0">
+                        {/* Simulation Canvas Area */}
+                        <div className="flex-1 flex flex-col min-h-[300px] md:min-h-0 relative bg-slate-900 rounded-xl border border-slate-700 shadow-2xl overflow-hidden order-1">
 
-                            {/* Description Box (Request 1) */}
-                            <div className="mb-4 bg-slate-800/80 border-l-4 border-blue-500 rounded-r-lg p-4 shadow-lg backdrop-blur-sm">
-                                <div className="flex items-start gap-3">
-                                    <Info className="text-blue-400 flex-shrink-0 mt-1" size={20} />
-                                    <p className="text-slate-200 text-sm md:text-base leading-relaxed">
-                                        {currentScenario.description}
-                                    </p>
+                            {/* Description Overlay */}
+                            <div className="absolute top-2 left-2 right-2 z-30 pointer-events-none">
+                                <div className="bg-slate-800/90 border-l-4 border-blue-500 rounded p-2 md:p-3 shadow-lg backdrop-blur-sm pointer-events-auto">
+                                    <div className="flex items-start gap-2">
+                                        <Info className="text-blue-400 flex-shrink-0 mt-0.5" size={16} />
+                                        <p className="text-slate-200 text-xs md:text-sm leading-snug">
+                                            {currentScenario.description}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Simulation Canvas */}
-                            <div className="flex-grow relative bg-slate-900 rounded-xl border border-slate-700 shadow-2xl overflow-hidden">
-
+                            {/* Game Field */}
+                            <div className="w-full h-full relative">
                                 {/* Stations */}
                                 {/* User Desk */}
                                 <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '50%' }}>
-                                    <div className="w-16 h-16 md:w-24 md:h-24 bg-slate-800 rounded-full border-4 border-slate-600 flex items-center justify-center shadow-lg">
-                                        <Monitor size={32} className="text-slate-400" />
+                                    <div className="w-14 h-14 md:w-24 md:h-24 bg-slate-800 rounded-full border-4 border-slate-600 flex items-center justify-center shadow-lg transition-all duration-300">
+                                        <Monitor className="text-slate-400 w-6 h-6 md:w-10 md:h-10" />
                                     </div>
-                                    <span className="mt-2 text-xs md:text-sm font-bold text-slate-400 bg-slate-900/90 px-2 py-1 rounded-full border border-slate-700">Schreibtisch</span>
+                                    <span className="mt-1 md:mt-2 text-[10px] md:text-sm font-bold text-slate-400 bg-slate-900/90 px-2 py-0.5 rounded-full border border-slate-700">Platz</span>
                                 </div>
 
                                 {/* System / ERP */}
-                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '20%', left: '20%' }}>
-                                    <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-900/30 rounded-lg border-4 border-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/20">
-                                        <Database size={28} className="text-emerald-500" />
+                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '35%', left: '20%' }}>
+                                    <div className="w-14 h-14 md:w-20 md:h-20 bg-emerald-900/30 rounded-lg border-4 border-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/20 transition-all duration-300">
+                                        <Database className="text-emerald-500 w-6 h-6 md:w-8 md:h-8" />
                                     </div>
-                                    <span className="mt-2 text-xs md:text-sm font-bold text-emerald-500 bg-slate-900/90 px-2 py-1 rounded-full border border-slate-700">ERP</span>
+                                    <span className="mt-1 md:mt-2 text-[10px] md:text-sm font-bold text-emerald-500 bg-slate-900/90 px-2 py-0.5 rounded-full border border-slate-700">ERP</span>
                                 </div>
 
                                 {/* Email / Outlook */}
-                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '20%', left: '80%' }}>
-                                    <div className="w-16 h-16 md:w-20 md:h-20 bg-sky-900/30 rounded-lg border-4 border-sky-700 flex items-center justify-center shadow-lg shadow-sky-900/20">
-                                        <Mail size={28} className="text-sky-500" />
+                                <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '35%', left: '80%' }}>
+                                    <div className="w-14 h-14 md:w-20 md:h-20 bg-sky-900/30 rounded-lg border-4 border-sky-700 flex items-center justify-center shadow-lg shadow-sky-900/20 transition-all duration-300">
+                                        <Mail className="text-sky-500 w-6 h-6 md:w-8 md:h-8" />
                                     </div>
-                                    <span className="mt-2 text-xs md:text-sm font-bold text-sky-500 bg-slate-900/90 px-2 py-1 rounded-full border border-slate-700">Outlook</span>
+                                    <span className="mt-1 md:mt-2 text-[10px] md:text-sm font-bold text-sky-500 bg-slate-900/90 px-2 py-0.5 rounded-full border border-slate-700">Outlook</span>
                                 </div>
 
                                 {/* AI Station */}
                                 {activeTab !== 1 && (
-                                    <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '85%' }}>
-                                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-lg border-4 flex items-center justify-center shadow-lg ${activeTab === 3 ? 'bg-purple-900/30 border-purple-600 shadow-purple-900/20' : 'bg-orange-900/30 border-orange-600 shadow-orange-900/20'}`}>
-                                            {activeTab === 3 ? <Bot size={28} className="text-purple-400" /> : <Brain size={28} className="text-orange-400" />}
+                                    <div className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ top: '70%', left: '80%' }}>
+                                        <div className={`w-14 h-14 md:w-20 md:h-20 rounded-lg border-4 flex items-center justify-center shadow-lg transition-all duration-300 ${activeTab === 3 ? 'bg-purple-900/30 border-purple-600 shadow-purple-900/20' : 'bg-orange-900/30 border-orange-600 shadow-orange-900/20'}`}>
+                                            {activeTab === 3 ? <Bot className="text-purple-400 w-6 h-6 md:w-8 md:h-8" /> : <Brain className="text-orange-400 w-6 h-6 md:w-8 md:h-8" />}
                                         </div>
                                         {activeTab === 3 && (step === 1) && (
-                                            <div className="absolute -top-8 animate-bounce text-purple-400">
-                                                <Settings size={20} />
+                                            <div className="absolute -top-6 md:-top-8 animate-bounce text-purple-400">
+                                                <Settings className="w-4 h-4 md:w-6 md:h-6" />
                                             </div>
                                         )}
-                                        <span className={`mt-2 text-xs md:text-sm font-bold bg-slate-900/90 px-2 py-1 rounded-full border border-slate-700 ${activeTab === 3 ? 'text-purple-400' : 'text-orange-400'}`}>
+                                        <span className={`mt-1 md:mt-2 text-[10px] md:text-sm font-bold bg-slate-900/90 px-2 py-0.5 rounded-full border border-slate-700 ${activeTab === 3 ? 'text-purple-400' : 'text-orange-400'}`}>
                                             {activeTab === 3 ? 'Agent' : 'ChatGPT'}
                                         </span>
                                     </div>
@@ -571,20 +573,20 @@
                                     }}
                                 >
                                     <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-blue-500/20">
-                                        <User size={20} />
+                                        <User className="w-5 h-5 md:w-6 md:h-6" />
                                     </div>
                                     {/* User Bubble */}
                                     {currentStepData.bubble && !currentStepData.showAgent && (
-                                        <div className="absolute bottom-12 md:bottom-14 w-40 md:w-48 bg-slate-800 p-2 md:p-3 rounded-xl shadow-2xl border border-slate-600 text-xs text-center animate-bounce text-slate-200 z-50">
+                                        <div className="absolute bottom-11 md:bottom-14 w-32 md:w-48 bg-slate-800 p-2 md:p-3 rounded-xl shadow-2xl border border-slate-600 text-[10px] md:text-xs text-center animate-bounce text-slate-200 z-50">
                                             {currentStepData.bubble}
-                                            <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
+                                            <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-2 h-2 md:w-3 md:h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
                                         </div>
                                     )}
                                     {/* Special Bubble for User when Agent is present (Stage 3) */}
                                     {currentStepData.bubble && currentStepData.showAgent && !currentStepData.bubble.startsWith("Agent") && !currentStepData.bubble.startsWith("System") && !currentStepData.bubble.startsWith("Ding") && (
-                                        <div className="absolute bottom-12 md:bottom-14 w-40 md:w-48 bg-slate-800 p-2 md:p-3 rounded-xl shadow-2xl border border-slate-600 text-xs text-center animate-bounce text-slate-200 z-50">
+                                        <div className="absolute bottom-11 md:bottom-14 w-32 md:w-48 bg-slate-800 p-2 md:p-3 rounded-xl shadow-2xl border border-slate-600 text-[10px] md:text-xs text-center animate-bounce text-slate-200 z-50">
                                             {currentStepData.bubble}
-                                            <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
+                                            <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-2 h-2 md:w-3 md:h-3 bg-slate-800 border-r border-b border-slate-600 rotate-45"></div>
                                         </div>
                                     )}
                                 </div>
@@ -599,13 +601,13 @@
                                         }}
                                     >
                                         <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-600 rounded-full border-2 border-slate-200 shadow-xl flex items-center justify-center text-white ring-4 ring-purple-500/20">
-                                            <Bot size={20} />
+                                            <Bot className="w-5 h-5 md:w-6 md:h-6" />
                                         </div>
                                         {/* Agent Bubble */}
                                         {currentStepData.bubble && (currentStepData.bubble.startsWith("Agent") || currentStepData.bubble.startsWith("System") || currentStepData.bubble.startsWith("Ding")) && (
-                                            <div className="absolute bottom-12 md:bottom-14 w-40 md:w-48 bg-purple-900 p-2 md:p-3 rounded-xl shadow-2xl border border-purple-500 text-xs text-center font-semibold text-purple-100 animate-pulse z-50">
+                                            <div className="absolute bottom-11 md:bottom-14 w-32 md:w-48 bg-purple-900 p-2 md:p-3 rounded-xl shadow-2xl border border-purple-500 text-[10px] md:text-xs text-center font-semibold text-purple-100 animate-pulse z-50">
                                                 {currentStepData.bubble}
-                                                <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-purple-900 border-r border-b border-purple-500 rotate-45"></div>
+                                                <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-2 h-2 md:w-3 md:h-3 bg-purple-900 border-r border-b border-purple-500 rotate-45"></div>
                                             </div>
                                         )}
                                     </div>
@@ -614,18 +616,16 @@
                             </div>
                         </div>
 
-                        {/* Right Column: Step History Sidebar (Request 2) */}
-                        <div className="w-full md:w-80 flex-shrink-0 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden shadow-xl">
-                            <div className="p-4 border-b border-slate-800 bg-slate-900/50">
-                                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                        {/* Sidebar: Step History */}
+                        <div className="w-full h-1/3 md:h-auto md:w-80 flex-shrink-0 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden shadow-xl order-2">
+                            <div className="p-3 border-b border-slate-800 bg-slate-900/50">
+                                <h2 className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-widest">
                                     Ablauf ({step + 1} / {currentScenario.steps.length})
                                 </h2>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                            <div className="flex-1 overflow-y-auto p-3 space-y-2 md:space-y-3">
                                 {currentScenario.steps.map((s, index) => {
-                                    // Only show steps up to current step (Request 2 - "aufbauen")
                                     if (index > step) return null;
-
                                     const isCurrent = index === step;
                                     const isPast = index < step;
 
@@ -633,23 +633,23 @@
                                         <div
                                             key={index}
                                             onClick={() => jumpToStep(index)}
-                                            className={`relative p-3 rounded-lg border text-sm cursor-pointer transition-all duration-200 ${isCurrent
+                                            className={`relative p-2 md:p-3 rounded-lg border text-xs md:text-sm cursor-pointer transition-all duration-200 ${isCurrent
                                                     ? 'bg-blue-900/20 border-blue-500 text-blue-100 shadow-md transform scale-102'
                                                     : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                                                 }`}
                                         >
-                                            <div className="flex items-start gap-3">
-                                                <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 ${isCurrent ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'
+                                            <div className="flex items-start gap-2 md:gap-3">
+                                                <div className={`flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[10px] md:text-xs font-bold mt-0.5 ${isCurrent ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'
                                                     }`}>
                                                     {index + 1}
                                                 </div>
-                                                <div>
+                                                <div className="leading-snug">
                                                     {s.text}
                                                 </div>
                                             </div>
                                             {isPast && (
-                                                <div className="absolute top-2 right-2 opacity-0 hover:opacity-100">
-                                                    <div className="text-xs bg-slate-700 text-white px-2 py-1 rounded">Zurück</div>
+                                                <div className="absolute top-1 right-1 opacity-0 hover:opacity-100">
+                                                    <div className="text-[10px] bg-slate-700 text-white px-1.5 py-0.5 rounded">Zurück</div>
                                                 </div>
                                             )}
                                         </div>
@@ -662,33 +662,32 @@
                     </div>
 
                     {/* Footer Control Panel */}
-                    <div className="bg-slate-900 border-t border-slate-800 p-4 md:p-6 flex flex-col items-center justify-center">
+                    <div className="bg-slate-900 border-t border-slate-800 p-3 md:p-6 flex flex-col items-center justify-center flex-shrink-0">
 
-                        <div>
+                        <div className="w-full md:w-auto">
                             {!currentStepData.isDone ? (
                                 <button
                                     onClick={handleNext}
                                     disabled={isAnimating}
-                                    className="group flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 md:py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/40 transform transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none w-full md:w-auto justify-center"
+                                    className="group flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold text-base md:text-lg shadow-lg shadow-blue-900/40 transform transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none w-full"
                                 >
                                     {currentStepData.action}
-                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                 </button>
                             ) : (
-                                // End of Scenario Button (Request 3)
                                 activeTab < 3 ? (
                                     <button
                                         onClick={handleNextScenario}
-                                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-8 py-3 md:py-4 rounded-xl font-bold text-lg shadow-lg shadow-purple-900/40 animate-pulse"
+                                        className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold text-base md:text-lg shadow-lg shadow-purple-900/40 animate-pulse w-full"
                                     >
-                                        Nächstes Szenario starten <ArrowRight size={20} />
+                                        Nächstes Szenario <ArrowRight className="w-5 h-5" />
                                     </button>
                                 ) : (
                                     <button
                                         disabled
-                                        className="flex items-center gap-2 bg-green-600 text-white px-8 py-3 md:py-4 rounded-xl font-bold text-lg shadow-lg shadow-green-900/40 opacity-90 cursor-default"
+                                        className="flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold text-base md:text-lg shadow-lg shadow-green-900/40 opacity-90 cursor-default w-full"
                                     >
-                                        Simulation beendet <CheckCircle size={20} />
+                                        Simulation beendet <CheckCircle className="w-5 h-5" />
                                     </button>
                                 )
                             )}

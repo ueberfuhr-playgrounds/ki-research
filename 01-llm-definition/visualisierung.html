@@ -3,13 +3,25 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>KI Verstehen: Interaktive Lernreise</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        html,
+        body,
+        #root {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #0f172a;
@@ -36,9 +48,10 @@
             transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s;
         }
 
-        /* Scrollbar styling for dark theme */
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
@@ -47,7 +60,7 @@
 
         ::-webkit-scrollbar-thumb {
             background: #475569;
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -63,19 +76,9 @@
         const { useState, useEffect, useRef } = React;
 
         // --- ICONS ---
+        // Definiert als einfache SVG Komponenten, um externe Abhängigkeiten zu vermeiden
         const Icon = ({ children, size = 24, className = "" }) => (
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width={size}
-                height={size}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className={className}
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {children}
             </svg>
         );
@@ -91,134 +94,84 @@
         const Play = (props) => <Icon {...props}><polygon points="5 3 19 12 5 21 5 3" /></Icon>;
         const XCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></Icon>;
 
-        // --- KOMPONENTEN ---
-
-        // 1. Intro Slide
+        // --- PHASE 1: INTRO ---
         const IntroSlide = ({ onNext }) => (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 fade-in text-slate-200">
-                <div className="bg-blue-600 text-white p-6 rounded-full mb-8 shadow-[0_0_30px_rgba(37,99,235,0.5)]">
-                    <Brain size={80} />
+            <div className="flex flex-col items-center justify-center h-full text-center p-6 md:p-8 fade-in text-slate-200">
+                <div className="bg-blue-600 text-white p-4 md:p-6 rounded-full mb-6 md:mb-8 shadow-[0_0_30px_rgba(37,99,235,0.5)]">
+                    <Brain size={60} className="md:w-20 md:h-20" />
                 </div>
-                <h1 className="text-5xl font-bold mb-6 tracking-tight">Wie "denkt" die KI?</h1>
-                <p className="text-xl text-slate-400 mb-12 max-w-2xl leading-relaxed">
+                <h1 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 tracking-tight">Wie "denkt" die KI?</h1>
+                <p className="text-lg md:text-xl text-slate-400 mb-8 md:mb-12 max-w-2xl leading-relaxed">
                     Willkommen zur interaktiven Reise in das Gehirn eines Large Language Models.
                     Entdecke Schritt für Schritt, wie es lernt, spricht und halluziniert.
                 </p>
-                <button onClick={onNext} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition transform hover:scale-105 flex items-center gap-3 text-lg">
+                <button onClick={onNext} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 md:py-4 md:px-10 rounded-xl shadow-lg transition transform hover:scale-105 flex items-center gap-3 text-base md:text-lg">
                     Lernreise starten <ArrowRight size={24} />
                 </button>
             </div>
         );
 
-        // 2. Training Slide
+        // --- PHASE 2: TRAINING ---
         const TrainingSlide = () => {
-            const [step, setStep] = useState(0); // 0=Untrained, 1=GuessWrong, 2=Update1, 3=GuessBetter, 4=Update2
-            const [feedback, setFeedback] = useState(null); // null, 'wrong', 'correct'
+            const [step, setStep] = useState(0);
+            const [feedback, setFeedback] = useState(null);
 
             const learningStages = {
-                0: [ // Initial: Fast Gleichverteilung (KI weiß nichts)
-                    { word: "Banane", value: 25, color: "bg-red-400" },
-                    { word: "Katze", value: 25, color: "bg-emerald-600" },
-                    { word: "Postbotin", value: 25, color: "bg-blue-500" },
-                    { word: "Wolke", value: 25, color: "bg-slate-500" }
-                ],
-                1: [ // Guess Wrong: Noch keine Änderung, aber KI rät "Banane" (da es oben steht oder Zufall)
-                    { word: "Banane", value: 25, color: "bg-red-400" }, // Highlight Banane visual
-                    { word: "Katze", value: 25, color: "bg-emerald-600" },
-                    { word: "Postbotin", value: 25, color: "bg-blue-500" },
-                    { word: "Wolke", value: 25, color: "bg-slate-500" }
-                ],
-                2: [ // Update 1: Backpropagation
-                    { word: "Banane", value: 15, color: "bg-red-400" },
-                    { word: "Katze", value: 45, color: "bg-emerald-600" },
-                    { word: "Postbotin", value: 25, color: "bg-blue-500" },
-                    { word: "Wolke", value: 15, color: "bg-slate-500" }
-                ],
-                3: [ // Guess Again: Katze führt
-                    { word: "Banane", value: 15, color: "bg-red-400" },
-                    { word: "Katze", value: 45, color: "bg-emerald-600" },
-                    { word: "Postbotin", value: 25, color: "bg-blue-500" },
-                    { word: "Wolke", value: 15, color: "bg-slate-500" }
-                ],
-                4: [ // Update 2: Final
-                    { word: "Banane", value: 5, color: "bg-slate-600" },
-                    { word: "Katze", value: 90, color: "bg-emerald-500" },
-                    { word: "Postbotin", value: 4, color: "bg-blue-500" },
-                    { word: "Wolke", value: 1, color: "bg-slate-600" }
-                ]
+                0: [{ word: "Banane", value: 25, color: "bg-red-400" }, { word: "Katze", value: 25, color: "bg-emerald-600" }, { word: "Postbotin", value: 25, color: "bg-blue-500" }, { word: "Wolke", value: 25, color: "bg-slate-500" }],
+                1: [{ word: "Banane", value: 25, color: "bg-red-400" }, { word: "Katze", value: 25, color: "bg-emerald-600" }, { word: "Postbotin", value: 25, color: "bg-blue-500" }, { word: "Wolke", value: 25, color: "bg-slate-500" }],
+                2: [{ word: "Banane", value: 15, color: "bg-red-400" }, { word: "Katze", value: 45, color: "bg-emerald-600" }, { word: "Postbotin", value: 25, color: "bg-blue-500" }, { word: "Wolke", value: 15, color: "bg-slate-500" }],
+                3: [{ word: "Banane", value: 15, color: "bg-red-400" }, { word: "Katze", value: 45, color: "bg-emerald-600" }, { word: "Postbotin", value: 25, color: "bg-blue-500" }, { word: "Wolke", value: 15, color: "bg-slate-500" }],
+                4: [{ word: "Banane", value: 5, color: "bg-slate-600" }, { word: "Katze", value: 90, color: "bg-emerald-500" }, { word: "Postbotin", value: 4, color: "bg-blue-500" }, { word: "Wolke", value: 1, color: "bg-slate-600" }]
             };
 
             const currentWeights = learningStages[step];
 
-            // Wortwahl für die Anzeige
             let displayedWord = "???";
             let displayColor = "text-blue-300";
 
-            if (step === 1) { // KI rät Banane
-                displayedWord = "Banane";
-                displayColor = "text-red-400 font-bold";
-            } else if (step === 2) { // KI lernt...
-                displayedWord = "Banane"; // Noch das falsche Wort sichtbar während Update
-                displayColor = "text-red-400 opacity-50";
-            } else if (step >= 3) {
-                displayedWord = "Katze";
-                displayColor = "text-emerald-400 font-bold";
-            }
+            if (step === 1) { displayedWord = "Banane"; displayColor = "text-red-400 font-bold"; }
+            else if (step === 2) { displayedWord = "Banane"; displayColor = "text-red-400 opacity-50"; }
+            else if (step >= 3) { displayedWord = "Katze"; displayColor = "text-emerald-400 font-bold"; }
 
             const trainAction = () => {
-                if (step === 0) {
-                    setStep(1); // KI rät
-                    setTimeout(() => setFeedback('wrong'), 500);
-                } else if (step === 1) {
-                    setFeedback(null);
-                    setStep(2); // Backpropagation
-                } else if (step === 2) {
-                    setStep(3); // KI rät neu
-                    setTimeout(() => setFeedback('correct'), 500);
-                } else if (step === 3) {
-                    setFeedback(null);
-                    setStep(4); // Feintuning
-                } else if (step === 4) {
-                    // Reset
-                    setStep(0);
-                    setFeedback(null);
-                }
+                if (step === 0) { setStep(1); setTimeout(() => setFeedback('wrong'), 500); }
+                else if (step === 1) { setFeedback(null); setStep(2); }
+                else if (step === 2) { setStep(3); setTimeout(() => setFeedback('correct'), 500); }
+                else if (step === 3) { setFeedback(null); setStep(4); }
+                else if (step === 4) { setStep(0); setFeedback(null); }
             };
 
             return (
-                <div className="flex flex-col h-full p-6 fade-in max-w-4xl mx-auto w-full text-slate-200">
-                    <h2 className="text-3xl font-bold mb-2 text-blue-400">Phase 1: Das Training</h2>
-                    <p className="text-slate-400 mb-6 text-lg">Wie lernt die KI? Durch Versuch, Irrtum und Anpassung (Backpropagation).</p>
+                <div className="flex flex-col h-full p-4 md:p-6 fade-in max-w-4xl mx-auto w-full text-slate-200">
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2 text-blue-400">Phase 1: Das Training</h2>
+                    <p className="text-slate-400 mb-4 md:mb-6 text-base md:text-lg">Wie lernt die KI? Durch Versuch, Irrtum und Anpassung (Backpropagation).</p>
 
-                    <div className="bg-slate-800 rounded-xl shadow-2xl p-8 border border-slate-700 mb-8 relative">
-                        {/* Feedback Overlay */}
+                    <div className="flex-1 bg-slate-800 rounded-xl shadow-2xl p-4 md:p-8 border border-slate-700 mb-6 relative flex flex-col justify-center min-h-[300px]">
                         {feedback === 'wrong' && (
-                            <div className="absolute top-4 right-4 bg-red-500/20 border border-red-500 text-red-300 px-4 py-2 rounded-lg flex items-center gap-2 animate-bounce">
-                                <XCircle size={20} /> Trainer: "Falsch! Das Ziel ist 'Katze'."
+                            <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-red-500/20 border border-red-500 text-red-300 px-3 py-1 md:px-4 md:py-2 rounded-lg flex items-center gap-2 animate-bounce text-sm md:text-base z-10">
+                                <XCircle size={18} /> <span className="hidden md:inline">Trainer: </span>"Falsch! Ziel: 'Katze'."
                             </div>
                         )}
                         {feedback === 'correct' && (
-                            <div className="absolute top-4 right-4 bg-emerald-500/20 border border-emerald-500 text-emerald-300 px-4 py-2 rounded-lg flex items-center gap-2 fade-in">
-                                <CheckCircle size={20} /> Trainer: "Richtig!"
+                            <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-emerald-500/20 border border-emerald-500 text-emerald-300 px-3 py-1 md:px-4 md:py-2 rounded-lg flex items-center gap-2 fade-in text-sm md:text-base z-10">
+                                <CheckCircle size={18} /> <span className="hidden md:inline">Trainer: </span>"Richtig!"
                             </div>
                         )}
 
-                        <div className="text-4xl font-mono text-center mb-10 mt-4">
-                            "Der Hund jagt die <span className={`border-b-4 border-blue-500 px-2 inline-block min-w-[150px] ${displayColor}`}>
+                        <div className="text-2xl md:text-4xl font-mono text-center mb-8 md:mb-10 mt-4 flex flex-wrap justify-center gap-2 leading-relaxed">
+                            <span>"Der Hund jagt die</span>
+                            <span className={`border-b-4 border-blue-500 px-2 inline-block min-w-[100px] md:min-w-[150px] ${displayColor}`}>
                                 {step === 0 ? '???' : displayedWord}
                             </span>"
                         </div>
 
-                        <div className="space-y-4">
-                            <p className="text-sm text-slate-500 font-semibold uppercase tracking-wider mb-2">Neuronale Gewichte:</p>
+                        <div className="space-y-3 md:space-y-4">
+                            <p className="text-xs md:text-sm text-slate-500 font-semibold uppercase tracking-wider mb-2">Neuronale Gewichte:</p>
                             {currentWeights.map((w, idx) => (
-                                <div key={idx} className="flex items-center gap-4 group">
-                                    <span className={`w-24 text-right font-medium ${w.value > 40 ? 'text-white' : 'text-slate-400'}`}>{w.word}</span>
-                                    <div className="flex-1 bg-slate-700 rounded-full h-8 overflow-hidden relative shadow-inner">
-                                        <div
-                                            className={`h-full bar-transition ${w.color}`}
-                                            style={{ width: `${w.value}%` }}
-                                        ></div>
+                                <div key={idx} className="flex items-center gap-2 md:gap-4 group">
+                                    <span className={`w-20 md:w-24 text-right font-medium text-sm md:text-base ${w.value > 40 ? 'text-white' : 'text-slate-400'}`}>{w.word}</span>
+                                    <div className="flex-1 bg-slate-700 rounded-full h-6 md:h-8 overflow-hidden relative shadow-inner">
+                                        <div className={`h-full bar-transition ${w.color}`} style={{ width: `${w.value}%` }}></div>
                                         <span className="absolute inset-0 flex items-center justify-end px-3 text-xs font-bold text-slate-900 opacity-60">{w.value}%</span>
                                     </div>
                                 </div>
@@ -226,23 +179,14 @@
                         </div>
                     </div>
 
-                    <div className="flex flex-row items-center gap-6 mt-auto">
-                        <div className="shrink-0">
-                            <button
-                                onClick={trainAction}
-                                className={`px-8 py-3 rounded-xl shadow-lg font-bold flex items-center gap-2 transition active:scale-95 ${step === 4 ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-blue-600 hover:bg-blue-500 text-white'
-                                    }`}
-                            >
-                                {step === 0 ? <><Brain size={20} /> Versuch starten</> :
-                                    step === 1 ? <><RefreshCcw size={20} /> Fehler korrigieren (Backpropagation)</> :
-                                        step === 2 ? <><Play size={20} /> Nächster Versuch</> :
-                                            step === 3 ? <><Brain size={20} /> Wissen vertiefen</> :
-                                                <><RefreshCcw size={20} /> Alles zurücksetzen</>}
+                    <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 mt-auto p-2 bg-slate-900/50 rounded-xl md:bg-transparent shrink-0">
+                        <div className="shrink-0 w-full md:w-auto">
+                            <button onClick={trainAction} className={`w-full md:w-auto px-6 py-3 rounded-xl shadow-lg font-bold flex items-center justify-center gap-2 transition active:scale-95 ${step === 4 ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
+                                {step === 0 ? <><Brain size={20} /> Versuch starten</> : step === 1 ? <><RefreshCcw size={20} /> Fehler korrigieren</> : step === 2 ? <><Play size={20} /> Nächster Versuch</> : step === 3 ? <><Brain size={20} /> Wissen vertiefen</> : <><RefreshCcw size={20} /> Alles zurücksetzen</>}
                             </button>
                         </div>
-
-                        <p className="text-sm text-slate-400">
-                            {step === 0 && "Die KI kennt die Zusammenhänge noch nicht (alle gleich gewichtet)."}
+                        <p className="text-sm text-slate-400 text-center md:text-left leading-snug">
+                            {step === 0 && "Die KI kennt die Zusammenhänge noch nicht."}
                             {step === 1 && "Die KI rät zufällig 'Banane'. Das ist falsch."}
                             {step === 2 && "Die Gewichte werden angepasst: Banane runter, Katze rauf."}
                             {step === 3 && "Jetzt ist 'Katze' wahrscheinlicher. Die KI rät richtig."}
@@ -253,7 +197,7 @@
             );
         };
 
-        // 3. Probabilities Slide (Hallucination)
+        // --- PHASE 3: PROBABILITY ---
         const ProbabilitySlide = () => {
             const [selectedWord, setSelectedWord] = useState(null);
             const [isGenerating, setIsGenerating] = useState(false);
@@ -261,59 +205,42 @@
             const words = [
                 { label: "Exakt", text: "Katze", type: "standard", prob: "80%", desc: "Die logische Wahl. Langweilig, aber korrekt." },
                 { label: "Kreativ", text: "Postbotin", type: "creative", prob: "15%", desc: "Eine spannende Wendung für die Geschichte." },
-                { label: "Sehr kreativ", text: "Bratpfanne", type: "hallucination", prob: "5%", desc: "Halluzination! Grammatikalisch richtig, aber inhaltlich Unsinn." }
+                { label: "Sehr kreativ", text: "Bratpfanne", type: "hallucination", prob: "5%", desc: "Halluzination! Grammatikalisch richtig, inhaltlich Unsinn." }
             ];
 
             const handleSelect = (word) => {
                 setSelectedWord(null);
                 setIsGenerating(true);
-                setTimeout(() => {
-                    setIsGenerating(false);
-                    setSelectedWord(word);
-                }, 1200);
+                setTimeout(() => { setIsGenerating(false); setSelectedWord(word); }, 1200);
             };
 
             return (
-                <div className="flex flex-col h-full p-6 fade-in max-w-5xl mx-auto w-full text-slate-200">
-                    <h2 className="text-3xl font-bold mb-2 text-blue-400">Phase 2: Die Auswahl</h2>
-                    <p className="text-slate-400 mb-4 text-lg">
+                <div className="flex flex-col h-full p-4 md:p-6 fade-in max-w-5xl mx-auto w-full text-slate-200">
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2 text-blue-400">Phase 2: Die Auswahl</h2>
+                    <p className="text-slate-400 mb-4 text-base md:text-lg">
                         Die KI würfelt das nächste Wort. Kreativität entsteht, wenn wir unwahrscheinlichere Pfade wählen.
                     </p>
 
-                    {/* INPUT SECTION */}
-                    <div className="bg-slate-800 p-6 rounded-xl shadow-2xl border border-slate-700 flex flex-col mb-6">
-                        <p className="text-3xl mb-6 text-center font-mono shrink-0">"Der Hund jagt die ..."</p>
+                    <div className="bg-slate-800 p-4 md:p-6 rounded-xl shadow-2xl border border-slate-700 flex flex-col mb-4 md:mb-6 shrink-0">
+                        <p className="text-2xl md:text-3xl mb-4 md:mb-6 text-center font-mono">"Der Hund jagt die ..."</p>
 
-                        <div className="flex items-center justify-center gap-2 text-yellow-200 mb-4 text-sm font-semibold shrink-0">
-                            <MousePointerClick size={16} /> Klicke auf eine Option, um den Satz zu beenden!
+                        <div className="flex items-center justify-center gap-2 text-yellow-200 mb-4 text-sm font-semibold">
+                            <MousePointerClick size={16} /> Klicke auf eine Option:
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                             {words.map((w, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`p-4 rounded-xl border-2 text-left relative overflow-hidden group flex flex-row items-center justify-between transition-colors duration-300 ${selectedWord === w
-                                            ? 'border-blue-500 bg-blue-900/30'
-                                            : 'border-slate-600 bg-slate-700/50'
-                                        }`}
-                                >
+                                <div key={idx} className={`p-3 md:p-4 rounded-xl border-2 text-left relative overflow-hidden group flex flex-row items-center justify-between transition-colors duration-300 ${selectedWord === w ? 'border-blue-500 bg-blue-900/30' : 'border-slate-600 bg-slate-700/50'}`}>
                                     <span className="font-bold text-lg text-white">{w.label}</span>
-
-                                    <button
-                                        onClick={() => handleSelect(w)}
-                                        disabled={isGenerating}
-                                        className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition transform hover:scale-110 active:scale-95 ${selectedWord === w ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-500'
-                                            }`}
-                                    >
-                                        <Play size={20} fill="currentColor" className="ml-1" />
+                                    <button onClick={() => handleSelect(w)} disabled={isGenerating} className={`w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg flex items-center justify-center transition transform hover:scale-110 active:scale-95 ${selectedWord === w ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-500'}`}>
+                                        <Play size={18} fill="currentColor" className="ml-1" />
                                     </button>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* OUTPUT SECTION */}
-                    <div className="min-h-[160px]">
+                    <div className="flex-1 min-h-[160px]">
                         {isGenerating && (
                             <div className="flex flex-col items-center justify-center h-full py-8 text-blue-400 animate-pulse">
                                 <Brain size={48} className="animate-bounce mb-4" />
@@ -322,33 +249,18 @@
                         )}
 
                         {!isGenerating && selectedWord && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 fade-in h-full">
-                                {/* Links: KI Ausgabe (Paper Style) */}
-                                <div className="bg-white p-6 rounded-xl border border-slate-300 shadow-xl relative text-slate-800 flex flex-col justify-center min-h-[140px]">
-                                    <div className="absolute top-0 right-0 bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">
-                                        GENERIERTER TEXT
-                                    </div>
-                                    <p className="text-xl font-serif leading-relaxed">
-                                        "Der Hund jagt die <span className={`font-bold border-b-2 ${selectedWord.type === 'standard' ? 'text-emerald-700 border-emerald-300' :
-                                                selectedWord.type === 'creative' ? 'text-blue-700 border-blue-300' : 'text-red-600 border-red-300'
-                                            }`}>{selectedWord.text}</span>."
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 fade-in h-full pb-4">
+                                <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-300 shadow-xl relative text-slate-800 flex flex-col justify-center min-h-[120px]">
+                                    <div className="absolute top-0 right-0 bg-blue-100 text-blue-800 text-[10px] md:text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">GENERIERTER TEXT</div>
+                                    <p className="text-lg md:text-xl font-serif leading-relaxed">
+                                        "Der Hund jagt die <span className={`font-bold border-b-2 ${selectedWord.type === 'standard' ? 'text-emerald-700 border-emerald-300' : selectedWord.type === 'creative' ? 'text-blue-700 border-blue-300' : 'text-red-600 border-red-300'}`}>{selectedWord.text}</span>."
                                     </p>
                                 </div>
-
-                                {/* Rechts: Analyse (Color Box) */}
-                                <div className={`p-6 rounded-xl border-l-4 shadow-lg flex flex-col justify-center min-h-[140px] ${selectedWord.type === 'standard' ? 'bg-emerald-900/20 border-emerald-500' :
-                                        selectedWord.type === 'creative' ? 'bg-blue-900/20 border-blue-500' :
-                                            'bg-red-900/20 border-red-500'
-                                    }`}>
-                                    <h3 className={`font-bold text-sm uppercase tracking-wider mb-2 flex items-center gap-2 ${selectedWord.type === 'standard' ? 'text-emerald-400' :
-                                            selectedWord.type === 'creative' ? 'text-blue-400' : 'text-red-400'
-                                        }`}>
-                                        {selectedWord.type === 'hallucination' ? <AlertTriangle size={18} /> : <Brain size={18} />}
-                                        Hintergrund-Analyse
+                                <div className={`p-4 md:p-6 rounded-xl border-l-4 shadow-lg flex flex-col justify-center min-h-[120px] ${selectedWord.type === 'standard' ? 'bg-emerald-900/20 border-emerald-500' : selectedWord.type === 'creative' ? 'bg-blue-900/20 border-blue-500' : 'bg-red-900/20 border-red-500'}`}>
+                                    <h3 className={`font-bold text-xs md:text-sm uppercase tracking-wider mb-2 flex items-center gap-2 ${selectedWord.type === 'standard' ? 'text-emerald-400' : selectedWord.type === 'creative' ? 'text-blue-400' : 'text-red-400'}`}>
+                                        {selectedWord.type === 'hallucination' ? <AlertTriangle size={16} /> : <Brain size={16} />} Hintergrund-Analyse
                                     </h3>
-                                    <p className="text-slate-300 text-base leading-relaxed">
-                                        {selectedWord.desc}
-                                    </p>
+                                    <p className="text-slate-300 text-sm md:text-base leading-relaxed">{selectedWord.desc}</p>
                                 </div>
                             </div>
                         )}
@@ -357,147 +269,98 @@
             );
         };
 
-        // 4. Prompting Slide
+        // --- PHASE 4: PROMPTING ---
         const PromptSlide = () => {
             const [activeTab, setActiveTab] = useState('bad');
             const [resultVisible, setResultVisible] = useState(false);
             const [isGenerating, setIsGenerating] = useState(false);
 
-            const handleTabChange = (tab) => {
-                setActiveTab(tab);
-                setResultVisible(false);
-                setIsGenerating(false);
-            };
-
-            const generateResponse = () => {
-                setIsGenerating(true);
-                setTimeout(() => {
-                    setIsGenerating(false);
-                    setResultVisible(true);
-                }, 1500);
-            };
+            const handleTabChange = (tab) => { setActiveTab(tab); setResultVisible(false); setIsGenerating(false); };
+            const generateResponse = () => { setIsGenerating(true); setTimeout(() => { setIsGenerating(false); setResultVisible(true); }, 1500); };
 
             return (
-                <div className="flex flex-col h-full p-6 fade-in max-w-7xl mx-auto w-full text-slate-200">
-                    <h2 className="text-3xl font-bold mb-2 text-blue-400">Phase 3: Der perfekte Prompt</h2>
-                    <p className="text-slate-400 mb-6 text-lg">
-                        Vergleiche die Ergebnisse: Eine ungenaue Anweisung vs. die 4-Bausteine-Methode.
+                <div className="flex flex-col h-auto md:h-full p-4 md:p-6 fade-in max-w-7xl mx-auto w-full text-slate-200">
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2 text-blue-400">Phase 3: Der perfekte Prompt</h2>
+                    <p className="text-slate-400 mb-4 md:mb-6 text-base md:text-lg">
+                        Vergleich: Eine ungenaue Anweisung vs. die 4-Bausteine-Methode.
                     </p>
 
                     <div className="flex gap-2 mb-0">
-                        <button
-                            onClick={() => handleTabChange('bad')}
-                            className={`px-6 py-3 rounded-t-xl font-bold transition ${activeTab === 'bad' ? 'bg-slate-800 text-red-400 border-t-2 border-x-2 border-slate-700 border-b-0' : 'bg-slate-900 text-slate-500 hover:text-slate-300 border-b-2 border-slate-700'}`}
-                        >
-                            ❌ Schlechter Prompt
-                        </button>
-                        <button
-                            onClick={() => handleTabChange('good')}
-                            className={`px-6 py-3 rounded-t-xl font-bold transition ${activeTab === 'good' ? 'bg-slate-800 text-emerald-400 border-t-2 border-x-2 border-slate-700 border-b-0' : 'bg-slate-900 text-slate-500 hover:text-slate-300 border-b-2 border-slate-700'}`}
-                        >
-                            ✅ Guter Prompt
-                        </button>
+                        <button onClick={() => handleTabChange('bad')} className={`px-4 py-2 md:px-6 md:py-3 rounded-t-xl font-bold transition text-sm md:text-base flex-1 md:flex-none ${activeTab === 'bad' ? 'bg-slate-800 text-red-400 border-t-2 border-x-2 border-slate-700 border-b-0' : 'bg-slate-900 text-slate-500 hover:text-slate-300 border-b-2 border-slate-700'}`}>❌ Schlecht</button>
+                        <button onClick={() => handleTabChange('good')} className={`px-4 py-2 md:px-6 md:py-3 rounded-t-xl font-bold transition text-sm md:text-base flex-1 md:flex-none ${activeTab === 'good' ? 'bg-slate-800 text-emerald-400 border-t-2 border-x-2 border-slate-700 border-b-0' : 'bg-slate-900 text-slate-500 hover:text-slate-300 border-b-2 border-slate-700'}`}>✅ Gut</button>
                     </div>
 
-                    <div className="bg-slate-800 rounded-b-xl rounded-tr-xl shadow-2xl border border-slate-700 flex-1 overflow-hidden flex flex-col md:flex-row">
+                    <div className="bg-slate-800 rounded-b-xl rounded-tr-xl shadow-2xl border border-slate-700 flex-none md:flex-1 md:overflow-hidden flex flex-col md:flex-row">
 
                         {/* LEFT: Input Area */}
-                        <div className="p-6 md:w-[45%] flex flex-col bg-slate-800/50">
-                            <h3 className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-4">Eingabe (Dein Prompt)</h3>
-
-                            <div className="flex-1 min-h-0">
-                                <div className="bg-slate-900 rounded-xl border border-slate-700 h-full shadow-inner flex flex-col relative overflow-hidden">
-                                    <div className="p-6 font-mono text-lg text-slate-300 whitespace-pre-wrap flex-1 overflow-y-auto">
-                                        {activeTab === 'bad'
-                                            ? "Schreib eine Absage an Herrn Müller."
-                                            : "Du bist ein freundlicher Personaler. Schreibe eine Absage an Herrn Müller. Kein Budget mehr, behalten ihn aber im Pool. Kurz, wertschätzend, max. 3 Sätze."}
-
-                                        <span className="inline-block w-2 h-5 ml-1 bg-blue-500 animate-pulse align-middle"></span>
+                        {/* Mobile: h-auto to wrap content tightly. Desktop: h-full */}
+                        <div className="p-4 md:p-6 md:w-[45%] flex flex-col bg-slate-800/50 h-auto md:h-full border-b md:border-b-0 md:border-r border-slate-700 shrink-0">
+                            <h3 className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-2 md:mb-4">Eingabe (Dein Prompt)</h3>
+                            <div className="relative md:flex-1 md:min-h-0">
+                                <div className="bg-slate-900 rounded-xl border border-slate-700 md:h-full shadow-inner flex flex-col relative overflow-hidden h-auto">
+                                    <div className="p-4 md:p-6 font-mono text-sm md:text-lg text-slate-300 whitespace-pre-wrap md:flex-1 md:overflow-y-auto">
+                                        {activeTab === 'bad' ? "Schreib eine Absage an Herrn Müller." : "Du bist ein freundlicher Personaler. Schreibe eine Absage an Herrn Müller. Kein Budget mehr, behalten ihn aber im Pool. Kurz, wertschätzend, max. 3 Sätze."}
+                                        <span className="inline-block w-1.5 h-4 md:w-2 md:h-5 ml-1 bg-blue-500 animate-pulse align-middle"></span>
                                     </div>
-
-                                    {activeTab === 'bad' && (
-                                        <div className="p-4 bg-red-900/20 border-t border-red-900/50 text-red-300 text-sm flex items-start gap-2 animate-in slide-in-from-bottom-2 fade-in duration-300">
-                                            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                                            <span>Zu wenig Kontext! Die KI muss raten.</span>
-                                        </div>
-                                    )}
-                                    {activeTab === 'good' && (
-                                        <div className="p-4 bg-emerald-900/20 border-t border-emerald-900/50 text-emerald-300 text-sm flex items-start gap-2 animate-in slide-in-from-bottom-2 fade-in duration-300">
-                                            <CheckCircle size={18} className="shrink-0 mt-0.5" />
-                                            <span>Perfekt! Rolle, Aufgabe, Kontext und Format sind enthalten.</span>
-                                        </div>
-                                    )}
+                                    <div className={`p-2 md:p-4 border-t text-xs md:text-sm flex items-start gap-2 ${activeTab === 'bad' ? 'bg-red-900/20 border-red-900/50 text-red-300' : 'bg-emerald-900/20 border-emerald-900/50 text-emerald-300'}`}>
+                                        {activeTab === 'bad' ? <><AlertTriangle size={16} className="shrink-0 mt-0.5" /> <span>Zu wenig Kontext! Die KI muss raten.</span></> : <><CheckCircle size={16} className="shrink-0 mt-0.5" /> <span>Perfekt! 4 Bausteine enthalten.</span></>}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* MIDDLE: Action Area */}
-                        <div className="flex items-center justify-center p-4 md:w-[10%] bg-slate-800 border-y md:border-y-0 md:border-x border-slate-700">
+                        <div className="flex items-center justify-center p-2 md:p-4 bg-slate-800 border-y md:border-y-0 md:border-x border-slate-700 md:w-[10%] shrink-0">
                             {!resultVisible && !isGenerating && (
-                                <button
-                                    onClick={generateResponse}
-                                    className={`w-16 h-16 md:w-20 md:h-20 rounded-full shadow-xl flex items-center justify-center transition hover:scale-110 active:scale-95 z-10 ${activeTab === 'bad' ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white ring-4 ring-blue-500/30'
-                                        }`}
-                                    title="An KI senden"
-                                >
-                                    <Play size={32} fill="currentColor" className="ml-1" />
+                                <button onClick={generateResponse} className={`w-full md:w-16 h-10 md:h-16 rounded-lg md:rounded-full shadow-xl flex items-center justify-center gap-2 md:gap-0 transition hover:scale-[1.02] md:hover:scale-110 active:scale-95 z-10 ${activeTab === 'bad' ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white ring-0 md:ring-4 ring-blue-500/30'}`} title="An KI senden">
+                                    <Play size={20} fill="currentColor" className="md:ml-1" /> <span className="md:hidden font-bold text-sm">Absenden</span>
                                 </button>
                             )}
                             {isGenerating && (
-                                <div className="w-16 h-16 md:w-20 md:h-20 flex flex-col items-center justify-center rounded-full bg-slate-700 text-blue-400 animate-pulse">
-                                    <Brain size={24} className="animate-bounce" />
+                                <div className="w-full md:w-16 h-10 md:h-16 flex flex-row md:flex-col items-center justify-center gap-2 rounded-lg md:rounded-full bg-slate-700 text-blue-400 animate-pulse">
+                                    <Brain size={20} className="animate-bounce" /> <span className="md:hidden text-sm">Generiere...</span>
                                 </div>
                             )}
                             {resultVisible && (
-                                <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-emerald-600/20 text-emerald-500 border border-emerald-500/50">
-                                    <CheckCircle size={32} />
+                                <div className="w-full md:w-16 h-10 md:h-16 flex items-center justify-center rounded-lg md:rounded-full bg-emerald-600/20 text-emerald-500 border border-emerald-500/50">
+                                    <CheckCircle size={24} />
                                 </div>
                             )}
                         </div>
 
                         {/* RIGHT: Output Area */}
-                        <div className="p-6 md:w-[45%] flex flex-col bg-slate-900/30">
-                            <h3 className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-4">KI Antwort</h3>
-
-                            <div className="flex-1 flex items-center justify-center">
+                        <div className="p-4 md:p-6 md:w-[45%] flex flex-col bg-slate-900/30 min-h-[200px] md:h-full shrink-0">
+                            <h3 className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-2 md:mb-4">KI Antwort</h3>
+                            <div className="flex-1 flex items-center justify-center min-h-0 relative">
                                 {!resultVisible && !isGenerating ? (
                                     <div className="text-center text-slate-600 opacity-50">
-                                        <div className="inline-block p-4 rounded-full mb-3 border-2 border-dashed border-slate-700">
-                                            <ArrowRight size={30} />
+                                        <div className="inline-block p-3 md:p-4 rounded-full mb-2 md:mb-3 border-2 border-dashed border-slate-700">
+                                            <ArrowRight size={24} className="md:w-8 md:h-8" />
                                         </div>
-                                        <p>Klicke auf Play zum Generieren</p>
+                                        <p className="text-sm">Klicke auf Play</p>
                                     </div>
                                 ) : isGenerating ? (
                                     <div className="w-full space-y-3 p-4">
-                                        <div className="h-4 bg-slate-700 rounded w-3/4 animate-pulse"></div>
-                                        <div className="h-4 bg-slate-700 rounded w-full animate-pulse"></div>
-                                        <div className="h-4 bg-slate-700 rounded w-5/6 animate-pulse"></div>
+                                        <div className="h-3 md:h-4 bg-slate-700 rounded w-3/4 animate-pulse"></div>
+                                        <div className="h-3 md:h-4 bg-slate-700 rounded w-full animate-pulse"></div>
+                                        <div className="h-3 md:h-4 bg-slate-700 rounded w-5/6 animate-pulse"></div>
                                     </div>
                                 ) : (
-                                    <div className={`w-full p-6 pb-10 rounded-xl border relative shadow-xl fade-in ${activeTab === 'bad'
-                                            ? 'bg-white text-slate-800 border-slate-300'
-                                            : 'bg-white text-slate-800 border-emerald-500 ring-4 ring-emerald-500/10'
-                                        }`}>
+                                    <div className={`w-full p-4 md:p-6 pb-10 rounded-xl border relative shadow-xl fade-in overflow-y-auto max-h-full ${activeTab === 'bad' ? 'bg-white text-slate-800 border-slate-300' : 'bg-white text-slate-800 border-emerald-500 ring-2 md:ring-4 ring-emerald-500/10'}`}>
                                         {activeTab === 'bad' ? (
                                             <>
-                                                <p className="italic font-serif text-lg mb-4">"Hallo Herr Müller, wir wollen Sie nicht. Tschüss."</p>
-                                                <div className="mt-4 pt-4 border-t border-slate-200 text-xs text-slate-500">
-                                                    <strong>Analyse:</strong> Die KI wählt den statistischen Durchschnitt. Ohne die Anweisung "Höflichkeit" kann es sehr direkt oder roboterhaft wirken.
+                                                <p className="italic font-serif text-base md:text-lg mb-4">"Hallo Herr Müller, wir wollen Sie nicht. Tschüss."</p>
+                                                <div className="pt-2 md:pt-4 border-t border-slate-200 text-xs text-slate-500">
+                                                    <strong>Analyse:</strong> Die KI wählt den Durchschnitt. Ohne "Höflichkeit" wirkt es schroff.
                                                 </div>
                                             </>
                                         ) : (
-                                            <>
-                                                <p className="text-slate-800 leading-relaxed mb-4 text-sm md:text-base">
-                                                    "Sehr geehrter Herr Müller,<br /><br />
-                                                    leider können wir Ihnen aktuell keine Zusage geben, da das Budget für diese Position gestrichen wurde. Da uns Ihr Profil jedoch sehr überzeugt hat, nehmen wir Sie gerne in unseren Talentpool auf.<br /><br />
-                                                    Wir melden uns, sobald sich eine neue Tür öffnet!"
-                                                </p>
-                                            </>
+                                            <p className="text-slate-800 leading-relaxed text-sm md:text-base">
+                                                "Sehr geehrter Herr Müller,<br /><br />
+                                                leider können wir Ihnen aktuell keine Zusage geben, da das Budget gestrichen wurde. Da uns Ihr Profil überzeugt hat, nehmen wir Sie gerne in unseren Talentpool auf."
+                                            </p>
                                         )}
-                                        <button
-                                            onClick={() => setResultVisible(false)}
-                                            className="absolute bottom-2 right-2 text-xs text-slate-400 hover:text-blue-600 p-2 flex items-center gap-1"
-                                        >
+                                        <button onClick={() => setResultVisible(false)} className="absolute bottom-2 right-2 text-xs text-slate-400 hover:text-blue-600 p-2 flex items-center gap-1">
                                             <RefreshCcw size={12} /> Neu starten
                                         </button>
                                     </div>
@@ -509,120 +372,68 @@
             );
         };
 
-        // 5. Resources Slide
+        // --- PHASE 5: RESOURCES ---
         const ResourceSlide = () => {
             const [copied, setCopied] = useState(false);
-
-            const content = `DIE ULTIMATIVE PROMPT-CHECKLISTE
-
---- DIE 4 BAUSTEINE ---
-ROLLE (Wer?): "Du bist ein erfahrener [Beruf]..."
-AUFGABE (Was?): "Erstelle / Schreibe / Fasse zusammen..."
-KONTEXT (Hintergrund?): "Es geht um [Zielgruppe/Situation]..."
-FORMAT (Wie?): "Als Tabelle / Kurz / Per Du..."
-
---- SICHERHEITS-CHECK ---
-DATENSCHUTZ: Keine echten Namen oder Kundendaten verwenden! (Nutze "Herr X", "Kunde A")`;
+            const textToCopy = `DIE ULTIMATIVE PROMPT-CHECKLISTE\n\n--- DIE 4 BAUSTEINE ---\nROLLE (Wer?): "Du bist ein erfahrener [Beruf]..."\nAUFGABE (Was?): "Erstelle / Schreibe / Fasse zusammen..."\nKONTEXT (Hintergrund?): "Es geht um [Zielgruppe/Situation]..."\nFORMAT (Wie?): "Als Tabelle / Kurz / Per Du..."\n\n--- SICHERHEITS-CHECK ---\nDATENSCHUTZ: Keine echten Namen oder Kundendaten verwenden! (Nutze "Herr X", "Kunde A")`;
 
             const copyToClipboard = async () => {
-                const textToCopy = content;
-                // Versuche Standard-API
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    try {
-                        await navigator.clipboard.writeText(textToCopy);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                        return;
-                    } catch (err) {
-                        console.log("Clipboard API failed, trying fallback...");
-                    }
+                    try { await navigator.clipboard.writeText(textToCopy); setCopied(true); setTimeout(() => setCopied(false), 2000); return; } catch (err) { }
                 }
-
-                // Fallback für eingebettete Umgebungen
                 try {
-                    const textArea = document.createElement("textarea");
-                    textArea.value = textToCopy;
-                    textArea.style.position = "fixed";
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-
-                    const successful = document.execCommand('copy');
+                    const textArea = document.createElement("textarea"); textArea.value = textToCopy; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select();
+                    if (document.execCommand('copy')) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
                     document.body.removeChild(textArea);
-
-                    if (successful) {
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                    }
-                } catch (err) {
-                    console.error("Copy failed completely", err);
-                }
+                } catch (err) { }
             };
 
             return (
                 <div className="flex flex-col h-full p-6 fade-in max-w-4xl mx-auto w-full text-slate-200 justify-center relative">
-                    <h2 className="text-3xl font-bold mb-6 text-blue-400 text-center flex items-center justify-center gap-3">
-                        <CheckCircle size={32} /> Ultimative Checkliste
+                    <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-blue-400 text-center flex items-center justify-center gap-2 md:gap-3">
+                        <CheckCircle size={28} className="md:w-8 md:h-8" /> Ultimative Checkliste
                     </h2>
 
                     <div className="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col relative group hover:border-blue-500 transition-colors max-w-2xl mx-auto w-full">
-
-                        {/* Copy Button with custom tooltip */}
-                        <div className="absolute top-4 right-4 z-20 group/btn">
-                            <button
-                                onClick={copyToClipboard}
-                                className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white transition shadow-lg"
-                                aria-label="Kopieren"
-                            >
+                        <div className="absolute top-3 right-3 md:top-4 md:right-4 z-20 group/btn">
+                            <button onClick={copyToClipboard} className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white transition shadow-lg" aria-label="Kopieren">
                                 {copied ? <CheckCircle size={20} className="text-emerald-400" /> : <Copy size={20} />}
                             </button>
-                            <span className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            <span className="hidden md:block absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                                 Kopieren
                             </span>
                         </div>
 
-                        <div className="p-8 text-slate-300 font-sans flex-1 bg-slate-800 leading-loose text-lg font-light space-y-6 pt-10">
-
+                        <div className="p-6 md:p-8 text-slate-300 font-sans flex-1 bg-slate-800 leading-loose text-base md:text-lg font-light space-y-6 md:space-y-8 pt-8 md:pt-10">
                             <div>
-                                <h3 className="text-slate-500 font-bold text-sm tracking-widest uppercase mb-4 border-b border-slate-700 pb-2">Die 4 Bausteine</h3>
-                                <ul className="space-y-2">
+                                <h3 className="text-slate-500 font-bold text-xs md:text-sm tracking-widest uppercase mb-2 md:mb-4 border-b border-slate-700 pb-2">Die 4 Bausteine</h3>
+                                <ul className="space-y-2 text-sm md:text-lg">
                                     <li><span className="text-purple-400 font-bold">ROLLE:</span> Wer soll die KI sein?</li>
                                     <li><span className="text-purple-400 font-bold">AUFGABE:</span> Was genau soll sie tun?</li>
                                     <li><span className="text-purple-400 font-bold">KONTEXT:</span> Welche Hintergrundinfos fehlen?</li>
                                     <li><span className="text-purple-400 font-bold">FORMAT:</span> Wie soll das Ergebnis aussehen?</li>
                                 </ul>
                             </div>
-
                             <div>
-                                <h3 className="text-slate-500 font-bold text-sm tracking-widest uppercase mb-4 border-b border-slate-700 pb-2 flex items-center gap-2">
+                                <h3 className="text-slate-500 font-bold text-xs md:text-sm tracking-widest uppercase mb-2 md:mb-4 border-b border-slate-700 pb-2 flex items-center gap-2">
                                     <AlertTriangle size={16} className="text-yellow-400" /> Sicherheits-Check
                                 </h3>
-                                <ul className="space-y-2">
-                                    <li>
-                                        <span className="text-red-400 font-bold">DATENSCHUTZ:</span> Habe ich alle echten Namen und Kundendaten entfernt?
-                                    </li>
+                                <ul className="space-y-2 text-sm md:text-lg">
+                                    <li><span className="text-red-400 font-bold">DATENSCHUTZ:</span> Keine echten Namen verwenden!</li>
                                 </ul>
                             </div>
-
                         </div>
                     </div>
                 </div>
             );
         };
 
-        // --- MAIN APP CONTAINER ---
+        // --- APP CONTAINER ---
         const App = () => {
             const [step, setStep] = useState(0);
             const totalSteps = 5;
-
-            const nextStep = () => {
-                if (step < totalSteps - 1) setStep(step + 1);
-            };
-
-            const prevStep = () => {
-                if (step > 0) setStep(step - 1);
-            };
-
+            const nextStep = () => { if (step < totalSteps - 1) setStep(step + 1); };
+            const prevStep = () => { if (step > 0) setStep(step - 1); };
             const renderStep = () => {
                 switch (step) {
                     case 0: return <IntroSlide onNext={nextStep} />;
@@ -635,49 +446,31 @@ DATENSCHUTZ: Keine echten Namen oder Kundendaten verwenden! (Nutze "Herr X", "Ku
             };
 
             return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-4">
-                    <div className="w-full max-w-6xl h-[700px] bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden flex flex-col relative">
-                        {/* Progress Bar (Hide on Step 0) */}
-                        {step > 0 && (
-                            <div className="h-1 bg-slate-800 w-full">
-                                <div
-                                    className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all duration-500"
-                                    style={{ width: `${((step + 1) / totalSteps) * 100}%` }}
-                                ></div>
-                            </div>
-                        )}
-
-                        {/* Main Content Area */}
-                        <div className="flex-1 overflow-y-auto bg-slate-950/50 relative scroll-smooth">
-                            {renderStep()}
-                        </div>
-
-                        {/* Navigation Footer (Hide on Step 0) */}
-                        {step > 0 && (
-                            <div className="bg-slate-900 border-t border-slate-800 p-6 flex justify-between items-center z-10">
-                                <button
-                                    onClick={prevStep}
-                                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition text-slate-400 hover:bg-slate-800 hover:text-white"
-                                >
-                                    <ArrowLeft size={20} /> Zurück
-                                </button>
-
-                                <div className="text-slate-600 font-mono text-sm hidden md:block">
-                                    Schritt {step + 1} / {totalSteps}
+                <div className="h-screen w-full flex flex-col bg-slate-900 overflow-hidden">
+                    <div className="flex-1 w-full max-w-6xl mx-auto flex flex-col relative overflow-hidden md:py-4">
+                        <div className="flex-1 bg-slate-900 md:bg-slate-900 md:rounded-3xl md:shadow-2xl md:border md:border-slate-800 overflow-hidden flex flex-col relative">
+                            {step > 0 && (
+                                <div className="h-1 bg-slate-800 w-full shrink-0">
+                                    <div className="h-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all duration-500" style={{ width: `${((step + 1) / totalSteps) * 100}%` }}></div>
                                 </div>
+                            )}
 
-                                <button
-                                    onClick={nextStep}
-                                    disabled={step === totalSteps - 1}
-                                    className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition shadow-lg ${step === totalSteps - 1
-                                            ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                                            : 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-105'
-                                        }`}
-                                >
-                                    {step === totalSteps - 1 ? 'Fertig' : 'Weiter'} <ArrowRight size={20} />
-                                </button>
+                            <div className="flex-1 overflow-y-auto relative scroll-smooth bg-slate-950/50">
+                                {renderStep()}
                             </div>
-                        )}
+
+                            {step > 0 && (
+                                <div className="bg-slate-900 border-t border-slate-800 p-4 md:p-6 flex justify-between items-center z-10 shrink-0">
+                                    <button onClick={prevStep} className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-xl font-semibold transition text-slate-400 hover:bg-slate-800 hover:text-white text-sm md:text-base">
+                                        <ArrowLeft size={20} /> <span className="hidden md:inline">Zurück</span>
+                                    </button>
+                                    <div className="text-slate-600 font-mono text-xs md:text-sm">Schritt {step + 1} / {totalSteps}</div>
+                                    <button onClick={nextStep} disabled={step === totalSteps - 1} className={`flex items-center gap-2 px-6 py-2 md:px-8 md:py-3 rounded-xl font-bold transition shadow-lg text-sm md:text-base ${step === totalSteps - 1 ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-105'}`}>
+                                        {step === totalSteps - 1 ? 'Fertig' : 'Weiter'} <ArrowRight size={20} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
