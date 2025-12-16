@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Context Protocol (MCP)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #020617;
+            /* Slate 950 */
+            color: #e2e8f0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .code-font {
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* Animation Object */
+        .packet {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #0ea5e9;
+            border-radius: 50%;
+            display: none;
+            box-shadow: 0 0 12px #0ea5e9;
+            z-index: 9999;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Component Styles */
+        .system-box {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            background-color: #1e293b;
+            /* Slate 800 */
+            z-index: 20;
+        }
+
+        .system-box.active {
+            box-shadow: 0 0 25px rgba(14, 165, 233, 0.4);
+            border-color: #38bdf8;
+            background-color: #0f172a;
+        }
+
+        .system-off {
+            opacity: 0.5;
+            filter: grayscale(1);
+            transform: scale(0.95);
+        }
+
+        /* MCP Port Style for Monolith */
+        .mcp-port {
+            width: 40px !important;
+            height: 100% !important;
+            border-radius: 8px 0 0 8px !important;
+            border-right: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #0f172a;
+            border-color: #10b981 !important;
+            /* Emerald for Monolith */
+            position: absolute;
+            /* Essential for relative positioning of label */
+        }
+
+        .mcp-port .mcp-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Show label outside the box for Monolith */
+        .mcp-port .mcp-label {
+            display: block !important;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            /* Wide enough for text */
+            text-align: center;
+        }
+
+        .mcp-port #mcp-title {
+            color: #10b981;
+            font-size: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .mcp-port #protocol-label {
+            display: none;
+            /* Hide protocol badge inside port, we show it on line */
+        }
+
+        .mcp-port .status-dot {
+            width: 6px;
+            height: 6px;
+            right: auto;
+            left: 2px;
+            bottom: 2px;
+        }
+
+        /* Brain Animation */
+        .brain-icon {
+            opacity: 0.4;
+            color: #64748b;
+            transition: all 0.3s ease;
+        }
+
+        .thinking .brain-icon {
+            opacity: 1;
+            color: #f472b6;
+            filter: drop-shadow(0 0 8px rgba(244, 114, 182, 0.6));
+            animation: brain-pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes brain-pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        /* Processing Pulse */
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7);
+            }
+
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 12px rgba(14, 165, 233, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+            }
+        }
+
+        .processing {
+            animation: pulse-ring 0.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+        }
+
+        /* Area Styles */
+        .area-container {
+            border: 2px dashed #334155;
+            border-radius: 1rem;
+            position: relative;
+            transition: all 0.5s ease;
+            background-color: rgba(15, 23, 42, 0.4);
+        }
+
+        /* SVG Lines Layer */
+        #connections-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .connector-line {
+            fill: none;
+            stroke: #334155;
+            stroke-width: 2;
+            transition: all 0.5s ease;
+        }
+
+        .connector-mcp {
+            stroke-width: 4;
+            stroke: #0ea5e9;
+            opacity: 0.3;
+        }
+
+        .connector-mcp.highlight {
+            opacity: 1;
+            filter: drop-shadow(0 0 6px #0ea5e9);
+        }
+
+        .connector-model {
+            stroke: #f472b6;
+            /* Pink */
+            stroke-width: 2;
+            stroke-dasharray: 4;
+            opacity: 0.4;
+        }
+
+        /* Dynamic Labels */
+        .op-badge {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: bold;
+            background: #0f172a;
+            border: 1px solid #38bdf8;
+            color: #38bdf8;
+            padding: 2px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 50;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .show-op {
+            opacity: 1;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        .slot-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Flex Helper for Slots */
+        .slot-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Chat Interface on Line */
+        #chat-interface {
+            position: absolute;
+            z-index: 40;
+            width: 140px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            pointer-events: none;
+            /* Let clicks pass through */
+        }
+
+        .chat-bubble {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            max-width: 100%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            animation: popIn 0.3s forwards;
+        }
+
+        .chat-user {
+            background-color: #0ea5e9;
+            /* Sky 500 */
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0;
+        }
+
+        .chat-agent {
+            background-color: #334155;
+            /* Slate 700 */
+            color: #e2e8f0;
+            align-self: flex-start;
+            border-bottom-left-radius: 0;
+            border: 1px solid #475569;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Global Tooltip */
+        #global-tooltip {
+            z-index: 99999;
+            pointer-events: none;
+            transition: opacity 0.1s ease;
+        }
+
+        /* Connection Labels on Lines */
+        .line-label {
+            position: absolute;
+            background: #0f172a;
+            color: #94a3b8;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #334155;
+            z-index: 15;
+            transform: translate(-50%, -50%);
+            display: none;
+            white-space: nowrap;
+        }
+
+        #mcp-conn-label {
+            border-color: #0ea5e9;
+            color: #38bdf8;
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col relative" onresize="drawConnections()">
+
+    <!-- LANDING PAGE -->
+    <div id="landing-page"
+        class="absolute inset-0 z-[60] bg-slate-950 flex flex-col items-center justify-center p-6 text-center transition-opacity duration-500">
+        <div class="mb-6 relative">
+            <div class="absolute inset-0 bg-sky-500 blur-3xl opacity-20 rounded-full"></div>
+            <i data-lucide="network" class="w-20 h-20 text-sky-400 relative z-10"></i>
+        </div>
+        <h1 class="text-3xl md:text-5xl font-bold text-white mb-4">Model Context Protocol</h1>
+        <p class="text-lg md:text-xl text-slate-300 mb-8 max-w-2xl leading-relaxed">
+            Eine interaktive Simulation der verschiedenen <span
+                class="text-sky-400 font-bold">MCP-Architekturszenarien</span>.<br>
+            Erlebe live, wie ein KI-Agent über den MCP-Standard eine Verbindung herstellt.
+        </p>
+        <button onclick="startSimulation()"
+            class="group relative px-8 py-4 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl shadow-xl shadow-sky-900/40 transition-all hover:scale-105">
+            Simulation starten
+            <i data-lucide="arrow-right" class="inline ml-2 group-hover:translate-x-1 transition-transform"></i>
+        </button>
+    </div>
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 border-b border-slate-800 p-3 shrink-0 z-50 shadow-md">
+        <div class="max-w-[1400px] mx-auto flex justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="bg-sky-500/10 text-sky-400 p-1.5 rounded-lg border border-sky-500/20"><i data-lucide="box"
+                        size="20"></i></span>
+                <div>
+                    <h1 class="text-lg font-bold text-white leading-tight">Model Context Protocol (MCP)</h1>
+                    <p class="text-xs text-slate-400">Architektur & Kommunikation</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Group: Local -->
+                <button onclick="setMode('local')" id="btn-local"
+                    class="flex items-center gap-2 px-3 py-2 rounded text-xs font-medium transition-colors bg-sky-600 text-white shadow-lg">
+                    <i data-lucide="monitor" size="14"></i> Lokal
+                </button>
+
+                <!-- Separator -->
+                <div class="h-6 w-px bg-slate-700"></div>
+
+                <!-- Group: Remote -->
+                <div class="flex bg-slate-950 rounded-lg p-1 border border-slate-800 gap-1">
+                    <span class="text-[10px] text-slate-500 uppercase font-bold px-2 flex items-center">Remote:</span>
+                    <button onclick="setMode('remote')" id="btn-remote"
+                        class="flex items-center gap-2 px-3 py-2 rounded text-xs font-medium transition-colors text-slate-400 hover:text-white hover:bg-slate-800">
+                        <i data-lucide="cloud" size="14"></i> Microservice
+                    </button>
+                    <button onclick="setMode('monolith')" id="btn-monolith"
+                        class="flex items-center gap-2 px-3 py-2 rounded text-xs font-medium transition-colors text-slate-400 hover:text-white hover:bg-slate-800">
+                        <i data-lucide="box" size="14"></i> Monolith
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN STAGE -->
+    <main class="flex-grow flex flex-col items-center p-4 relative w-full max-w-[1400px] mx-auto">
+
+        <!-- Scenario Info -->
+        <div class="text-center mb-2 shrink-0 h-10">
+            <h2 id="scenario-title" class="text-xl font-bold text-white transition-all">Lokaler Modus</h2>
+            <p id="scenario-desc" class="text-slate-400 text-sm">MCP-Server läuft als lokaler Prozess.</p>
+        </div>
+
+        <!-- DIAGRAM CONTAINER -->
+        <div id="diagram-container"
+            class="relative w-full flex items-center justify-center gap-32 h-[320px] shrink-0 mt-12 mb-4">
+
+            <!-- SVG LAYER FOR LINES -->
+            <svg id="connections-layer">
+                <!-- Lines will be injected by JS -->
+            </svg>
+
+            <!-- Labels (Absolute) -->
+            <div id="rest-label" class="line-label">REST</div>
+            <!-- Updated Label -->
+            <div id="mcp-conn-label" class="line-label">HTTP (SSE)</div>
+
+            <!-- Packet Element -->
+            <div id="packet" class="packet"></div>
+
+            <!-- CHAT INTERFACE -->
+            <div id="chat-interface"></div>
+
+            <!-- 1. USER COLUMN -->
+            <div class="flex flex-col items-center justify-center gap-2 z-30" id="wrapper-user">
+                <div id="sys-user"
+                    class="system-box w-24 h-24 rounded-full flex flex-col items-center justify-center gap-1 border-2 border-slate-600 shadow-lg">
+                    <i data-lucide="user" size="28" class="text-slate-300"></i>
+                    <span class="text-[10px] font-bold text-white uppercase">Du</span>
+                </div>
+            </div>
+
+            <!-- PROMPT BUBBLE -->
+            <div class="text-[10px] text-center text-slate-400 bg-slate-900/90 px-3 py-1.5 rounded-full border border-slate-700 opacity-0 shadow-xl"
+                id="user-bubble">
+                "Grüße Max"
+            </div>
+
+            <!-- 2. COMPUTER AREA -->
+            <div class="area-container w-[220px] h-full pt-8 pb-4 px-4 flex flex-col items-center justify-between relative"
+                id="area-user">
+                <div
+                    class="absolute -top-3 left-4 bg-slate-900 px-3 text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border border-slate-700 rounded-full py-0.5 z-40">
+                    <i data-lucide="laptop" size="12"></i> Dein Computer
+                </div>
+
+                <!-- ROW 1: CLIENT NODE -->
+                <div id="sys-client"
+                    class="system-box w-full bg-slate-800 border-2 border-slate-600 p-3 rounded-xl flex flex-col items-center gap-2 z-30 shadow-xl">
+                    <div class="op-badge" id="badge-client"></div>
+                    <div
+                        class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-lg">
+                        <i data-lucide="bot" size="24"></i>
+                    </div>
+                    <div class="text-center">
+                        <div class="font-bold text-white text-sm">MCP-Client</div>
+                        <!-- Updated Description -->
+                        <div class="text-[10px] text-slate-400">KI-Agent</div>
+                    </div>
+                </div>
+
+                <!-- ROW 2: SLOT FOR LOCAL MCP -->
+                <div id="slot-local"
+                    class="w-full h-32 flex flex-col justify-end items-center relative rounded-xl flex-grow-0">
+                    <!-- MCP Server will land here -->
+                </div>
+            </div>
+
+            <!-- 3. CLOUD AREA -->
+            <div class="area-container w-[380px] h-full pt-8 pb-4 px-4 flex flex-col items-center justify-between relative"
+                id="area-cloud">
+                <div
+                    class="absolute -top-3 left-4 bg-slate-900 px-3 text-slate-500 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border border-slate-800 rounded-full py-0.5 z-40">
+                    <i data-lucide="server" size="12"></i> Cloud / RZ
+                </div>
+
+                <!-- ROW 1: AI MODEL NODE -->
+                <div class="w-full flex justify-center">
+                    <div id="sys-model"
+                        class="system-box w-48 bg-slate-900 border border-slate-700 p-3 rounded-lg flex flex-row items-center gap-3 z-30 shadow-lg">
+                        <div class="op-badge" id="badge-model"></div>
+                        <div class="relative shrink-0">
+                            <i data-lucide="brain-circuit" size="24" class="brain-icon"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="font-semibold text-slate-300 text-xs">KI-Modell</div>
+                            <div class="text-[9px] text-slate-500">LLM API (Inference)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 2: REMOTE SLOT + BACKEND -->
+                <div class="w-full h-32 flex flex-row items-end justify-center gap-4 relative">
+
+                    <!-- SLOT FOR REMOTE MCP -->
+                    <div id="slot-remote"
+                        class="w-40 h-full relative flex flex-col justify-end items-center pb-2 transition-all duration-300">
+                        <!-- MCP Server lands here -->
+                    </div>
+
+                    <!-- BACKEND NODE -->
+                    <div id="sys-backend"
+                        class="system-box w-32 bg-slate-900 border border-slate-700 p-3 rounded-lg flex flex-col items-center gap-2 z-30 opacity-70 scale-95 shadow-lg mb-2 relative transition-all duration-300">
+                        <div class="op-badge" id="badge-backend"></div>
+                        <div
+                            class="w-10 h-10 bg-emerald-900/30 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-900/50 shrink-0">
+                            <i data-lucide="database" size="20"></i>
+                        </div>
+                        <div class="text-center">
+                            <div class="font-semibold text-slate-300 text-xs">Backend</div>
+                            <div class="text-[9px] text-slate-500">Externes System</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- THE MOVEABLE MCP SERVER NODE -->
+            <div id="sys-mcp"
+                class="system-box w-36 bg-slate-800 border-2 border-sky-500/50 p-2 rounded-xl flex flex-row items-center gap-2 z-50 shadow-2xl shadow-sky-900/20 transition-all duration-300">
+                <div class="op-badge" id="badge-mcp"></div>
+                <div class="relative shrink-0">
+                    <div id="mcp-icon-bg"
+                        class="w-10 h-10 bg-gradient-to-br from-sky-600 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg border border-sky-400/30 mcp-icon">
+                        <i data-lucide="cpu" size="20"></i>
+                    </div>
+                    <div id="mcp-status-dot"
+                        class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-800 flex items-center justify-center bg-slate-900 status-dot">
+                        <div id="status-dot"
+                            class="w-2 h-2 rounded-full bg-slate-600 transition-colors duration-300 shadow-[0_0_8px_rgba(0,0,0,1)]">
+                        </div>
+                    </div>
+                </div>
+                <div class="text-left mcp-label">
+                    <div class="font-bold text-white text-xs" id="mcp-title">MCP Server</div>
+                    <div class="text-[9px] text-sky-300 font-mono mt-0.5 px-1.5 py-0.5 bg-sky-950 rounded border border-sky-800 inline-block"
+                        id="protocol-label">STDIO</div>
+                </div>
+            </div>
+
+        </div> <!-- End Diagram -->
+
+        <!-- Global Tooltip Overlay -->
+        <div id="global-tooltip"
+            class="fixed hidden bottom-24 left-1/2 transform -translate-x-1/2 w-[90%] max-w-2xl p-4 bg-slate-900/95 backdrop-blur border border-slate-600 rounded-xl shadow-2xl text-xs text-slate-200 font-mono leading-relaxed border-l-4 border-l-sky-500">
+            <div class="font-bold text-sky-400 mb-1 border-b border-slate-700 pb-1 flex justify-between">
+                <span id="tooltip-title">Details</span>
+                <span class="text-[10px] text-slate-500">JSON-RPC</span>
+            </div>
+            <div id="tooltip-content" class="whitespace-pre-wrap break-all max-h-48 overflow-y-auto custom-scrollbar">
+            </div>
+        </div>
+
+        <!-- CONTROLS & LOG -->
+        <div class="w-full flex flex-col md:flex-row gap-6 h-[220px] shrink-0 mt-2">
+
+            <!-- Controls -->
+            <div class="w-full md:w-1/3 flex flex-col gap-3">
+                <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700 shadow-lg flex-grow flex flex-col">
+                    <div class="flex justify-between items-center mb-2 border-b border-slate-700 pb-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Ablaufsteuerung</span>
+                        <span id="step-counter" class="text-sky-400 font-bold font-mono text-base">Start</span>
+                    </div>
+
+                    <div class="my-2 flex-grow">
+                        <h3 id="step-title" class="font-bold text-white text-base mb-1">Bereit</h3>
+                        <p id="step-desc" class="text-sm text-slate-400 leading-snug">
+                            Wähle einen Modus. Der Prozess beginnt mit einem User-Prompt.
+                        </p>
+                    </div>
+
+                    <div class="flex gap-3 mt-auto">
+                        <button onclick="resetSim()"
+                            class="px-4 py-2 text-slate-400 hover:text-white bg-slate-700/50 hover:bg-slate-600 rounded-lg transition-colors"
+                            title="Reset">
+                            <i data-lucide="rotate-ccw" size="18"></i>
+                        </button>
+                        <button onclick="nextStep()" id="btn-next"
+                            class="flex-1 py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold shadow-lg shadow-sky-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2 group">
+                            Nächster Schritt <i data-lucide="chevron-right" size="16"
+                                class="group-hover:translate-x-1 transition-transform"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log Console -->
+            <div
+                class="w-full md:w-2/3 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex flex-col shadow-inner">
+                <div class="bg-slate-900 px-4 py-2 border-b border-slate-800 flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-400 flex items-center gap-2">
+                        <i data-lucide="terminal" size="14"></i> PROTOKOLL
+                    </span>
+                    <span class="text-[10px] text-slate-500 font-mono">JSON-RPC 2.0 / HTTP</span>
+                </div>
+                <div class="p-4 overflow-y-auto font-mono text-xs flex-grow custom-scrollbar space-y-2"
+                    id="log-container">
+                    <div class="text-slate-600 italic">// Warten auf User Input...</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // State
+        let currentMode = 'local';
+        let currentStep = -1;
+        let isAnimating = false;
+
+        // Elements
+        const elLanding = document.getElementById('landing-page');
+        const elMcp = document.getElementById('sys-mcp');
+        const elMcpTitle = document.getElementById('mcp-title');
+        const elMcpIconBg = document.getElementById('mcp-icon-bg');
+        const elClient = document.getElementById('sys-client');
+        const elModel = document.getElementById('sys-model');
+        const elBackend = document.getElementById('sys-backend');
+        const elSlotLocal = document.getElementById('slot-local');
+        const elSlotRemote = document.getElementById('slot-remote');
+        const elPacket = document.getElementById('packet');
+        const elLog = document.getElementById('log-container');
+        const elStatusDot = document.getElementById('status-dot');
+        const elChat = document.getElementById('chat-interface');
+        const svgLayer = document.getElementById('connections-layer');
+        const elTooltip = document.getElementById('global-tooltip');
+        const elTooltipContent = document.getElementById('tooltip-content');
+        const elTooltipTitle = document.getElementById('tooltip-title');
+        const elDiagram = document.getElementById('diagram-container');
+        const elRestLabel = document.getElementById('rest-label');
+        const elMcpConnLabel = document.getElementById('mcp-conn-label');
+
+        // Labels
+        const lblProto = document.getElementById('protocol-label');
+        const badgeClient = document.getElementById('badge-client');
+        const badgeModel = document.getElementById('badge-model');
+        const badgeMcp = document.getElementById('badge-mcp');
+        const badgeBackend = document.getElementById('badge-backend');
+
+        // Scenarios
+        const scenarios = {
+            local: {
+                title: "Lokaler Modus (Subprozess)",
+                desc: "MCP-Server läuft direkt auf deinem Rechner. Kommunikation via STDIO.",
+                proto: "STDIO"
+            },
+            remote: {
+                title: "Remote (Microservice)",
+                desc: "MCP-Server läuft als eigenständiger Service in der Cloud (HTTP/SSE).",
+                proto: "HTTP/SSE"
+            },
+            monolith: {
+                title: "Remote (Monolith)",
+                desc: "MCP-Server ist direkt als Schnittstelle im Backend integriert.",
+                proto: "HTTP/SSE"
+            }
+        };
+
+        const steps = [
+            {
+                id: 0,
+                title: "0. User Prompt",
+                desc: "Der Benutzer gibt eine Anweisung an den Client.",
+                action: async () => {
+                    document.getElementById('sys-user').classList.add('active');
+
+                    addChatMessage("Grüße Max", "user");
+                    log("USER: 'Grüße Max'", 'info');
+
+                    await animatePacket('sys-user', 'sys-client', '#94a3b8', 'right', 'left');
+
+                    log("[Client] Prompt empfangen.", 'sys');
+                    document.getElementById('sys-user').classList.remove('active');
+                }
+            },
+            {
+                id: 1,
+                title: "1. Handshake",
+                desc: "Der Client stellt die Verbindung zum MCP-Server her.",
+                action: async () => {
+                    if (currentMode === 'local') {
+                        log("[System] Spawning subprocess 'mcp-server'...", 'sys');
+                        elMcp.classList.remove('system-off');
+                        elStatusDot.classList.replace('bg-slate-600', 'bg-green-500');
+                        showBadge(badgeMcp, "Spawning");
+                        await wait(1000);
+                    }
+
+                    const reqJson = `{"jsonrpc": "2.0", "method": "initialize", "params": {"protocolVersion": "2024-11-05"}}`;
+                    const resJson = `{"jsonrpc": "2.0", "result": {"protocolVersion": "2024-11-05", "serverInfo": {"name": "HW-Server"}}}`;
+
+                    logDetail("REQ: initialize", reqJson, 'req');
+                    showBadge(badgeClient, "initialize");
+
+                    if (currentMode === 'local') {
+                        await animatePacket('sys-client', 'sys-mcp', '#38bdf8', 'bottom', 'top');
+                    } else {
+                        // Remote
+                        await animatePacket('sys-client', 'sys-mcp', '#38bdf8', 'right', 'left');
+                    }
+
+                    showBadge(badgeMcp, "ACK");
+                    elMcp.classList.add('processing');
+                    await wait(800);
+                    elMcp.classList.remove('processing');
+
+                    logDetail("RES: initialize result", resJson, 'res');
+                    if (currentMode === 'local') {
+                        await animatePacket('sys-mcp', 'sys-client', '#38bdf8', 'top', 'bottom');
+                    } else {
+                        await animatePacket('sys-mcp', 'sys-client', '#38bdf8', 'left', 'right');
+                    }
+                    hideBadges();
+                }
+            },
+            {
+                id: 2,
+                title: "2. Tool Discovery",
+                desc: "Der Client fragt ab, welche Tools verfügbar sind.",
+                action: async () => {
+                    const listReq = `{"jsonrpc": "2.0", "method": "tools/list"}`;
+                    const listRes = `{"jsonrpc": "2.0", "result": {"tools": [{"name": "say_hello"}]}}`;
+
+                    logDetail("REQ: tools/list", listReq, 'req');
+                    showBadge(badgeClient, "List Tools");
+
+                    if (currentMode === 'local') {
+                        await animatePacket('sys-client', 'sys-mcp', '#38bdf8', 'bottom', 'top');
+                    } else {
+                        await animatePacket('sys-client', 'sys-mcp', '#38bdf8', 'right', 'left');
+                    }
+
+                    elMcp.classList.add('processing');
+                    await wait(600);
+                    elMcp.classList.remove('processing');
+
+                    logDetail("RES: tools list", listRes, 'res');
+                    if (currentMode === 'local') {
+                        await animatePacket('sys-mcp', 'sys-client', '#38bdf8', 'top', 'bottom');
+                    } else {
+                        await animatePacket('sys-mcp', 'sys-client', '#38bdf8', 'left', 'right');
+                    }
+                    hideBadges();
+                }
+            },
+            {
+                id: 3,
+                title: "3. Reasoning",
+                desc: "Client sendet Prompt + Tools an das Modell. KI entscheidet.",
+                action: async () => {
+                    log("[Client] Sending Prompt + Tool List to Model...", 'req');
+
+                    await animatePacket('sys-client', 'sys-model', '#f472b6', 'right', 'left');
+
+                    elModel.classList.add('thinking');
+                    showBadge(badgeModel, "Reasoning...");
+                    await wait(2000);
+                    elModel.classList.remove('thinking');
+                    hideBadges();
+
+                    log("[Model] Decided: Use tool 'say_hello'", 'res');
+                    await animatePacket('sys-model', 'sys-client', '#f472b6', 'left', 'right');
+
+                    log("[Agent] Erkannt: Benötige Tool 'say_hello'.", 'info');
+                }
+            },
+            {
+                id: 4,
+                title: "4. Execution",
+                desc: "Client führt das gewünschte Tool via MCP aus.",
+                action: async () => {
+                    const reqJson = `{"jsonrpc": "2.0", "method": "tools/call", "params": {"name": "say_hello", "args": {"name": "Max"}}}`;
+                    const restUrl = "GET /api/greet?name=Max";
+                    const restRes = `HTTP/1.1 200 OK\nContent-Type: application/json\n\n{"greeting": "Hallo Max"}`;
+                    const resJson = `{"jsonrpc": "2.0", "result": {"content": [{"type": "text", "text": "Hallo Max"}]}}`;
+
+                    logDetail("REQ: tools/call 'say_hello'", reqJson, 'req');
+                    showBadge(badgeClient, "Call Tool");
+
+                    if (currentMode === 'local') {
+                        await animatePacket('sys-client', 'sys-mcp', '#38bdf8', 'bottom', 'top');
+                    } else {
+                        await animatePacket('sys-client', 'sys-mcp', '#38bdf8', 'right', 'left');
+                    }
+
+                    showBadge(badgeMcp, "Execute");
+                    elMcp.classList.add('processing');
+                    await wait(1200);
+                    elMcp.classList.remove('processing');
+
+                    // If not Monolith, simulate REST call
+                    if (currentMode !== 'monolith') {
+                        logDetail("HTTP REQ: " + restUrl, null, 'rest');
+                        await animatePacket('sys-mcp', 'sys-backend', '#f59e0b', 'right', 'left');
+
+                        document.getElementById('sys-backend').classList.add('active');
+                        showBadge(badgeBackend, "Processing");
+                        await wait(1000);
+                        document.getElementById('sys-backend').classList.remove('active');
+
+                        logDetail("HTTP RES: 200 OK", restRes, 'rest');
+                        await animatePacket('sys-backend', 'sys-mcp', '#10b981', 'left', 'right');
+
+                        showBadge(badgeMcp, "Format");
+                        elMcp.classList.add('processing');
+                        await wait(800);
+                        elMcp.classList.remove('processing');
+                    } else {
+                        // Monolith: Internal processing (Visualized on Backend)
+                        document.getElementById('sys-backend').classList.add('active');
+                        log("[MCP] Internal function call executed.", 'rest');
+                        showBadge(badgeBackend, "Internal Call");
+                        await wait(1000);
+                        document.getElementById('sys-backend').classList.remove('active');
+                    }
+
+                    logDetail("RES: tool result", resJson, 'res');
+                    if (currentMode === 'local') {
+                        await animatePacket('sys-mcp', 'sys-client', '#38bdf8', 'top', 'bottom');
+                    } else {
+                        await animatePacket('sys-mcp', 'sys-client', '#38bdf8', 'left', 'right');
+                    }
+
+                    showBadge(badgeClient, "Success");
+                    log("[Client] Tool Result empfangen.", 'sys');
+                    hideBadges();
+                }
+            },
+            {
+                id: 5,
+                title: "5. Final Response",
+                desc: "Client sendet Tool-Ergebnis an KI. Diese formuliert die Antwort.",
+                action: async () => {
+                    log("[Client] Sende Tool-Ergebnis an KI-Modell...", 'req');
+
+                    await animatePacket('sys-client', 'sys-model', '#f472b6', 'right', 'left');
+
+                    elModel.classList.add('thinking');
+                    showBadge(badgeModel, "Generating...");
+                    await wait(2000);
+                    elModel.classList.remove('thinking');
+                    hideBadges();
+
+                    const finalRes = "Hallo Max! Wie geht es dir?";
+                    log(`[Model] Antwort generiert: "${finalRes}"`, 'res');
+
+                    await animatePacket('sys-model', 'sys-client', '#f472b6', 'left', 'right');
+
+                    addChatMessage(finalRes, "agent");
+                    log(`AGENT: '${finalRes}'`, 'info');
+
+                    showBadge(badgeClient, "Done");
+                }
+            }
+        ];
+
+        // --- Core Logic ---
+
+        function startSimulation() {
+            elLanding.style.opacity = '0';
+            setTimeout(() => {
+                elLanding.style.display = 'none';
+                placeMcpServer();
+                drawConnections();
+            }, 500);
+        }
+
+        function setMode(mode) {
+            if (isAnimating) return;
+            currentMode = mode;
+            resetSim();
+
+            // Buttons UI
+            const btnBase = "flex items-center gap-2 px-3 py-2 rounded text-xs font-medium transition-colors ";
+            const active = "bg-sky-600 text-white shadow-lg";
+            const inactive = "text-slate-400 hover:text-white hover:bg-slate-800";
+
+            document.getElementById('btn-local').className = btnBase + (mode === 'local' ? active : inactive);
+            document.getElementById('btn-remote').className = btnBase + (mode === 'remote' ? active.replace('bg-sky-600', 'bg-purple-600') : inactive);
+            document.getElementById('btn-monolith').className = btnBase + (mode === 'monolith' ? active.replace('bg-sky-600', 'bg-emerald-600') : inactive);
+
+            // Info
+            document.getElementById('scenario-title').innerText = scenarios[mode].title;
+            document.getElementById('scenario-desc').innerText = scenarios[mode].desc;
+            lblProto.innerText = scenarios[mode].proto;
+
+            // Layout changes based on Monolith vs Others
+            if (mode === 'monolith') {
+                elRestLabel.style.display = 'none';
+                elMcpConnLabel.style.display = 'block';
+
+                // Dock MCP to Backend
+                elMcp.classList.add('mcp-port');
+                elMcpTitle.innerText = "MCP";
+                // Use green for Monolith interface
+                elMcpIconBg.className = "w-6 h-6 bg-emerald-600 rounded flex items-center justify-center text-white mcp-icon";
+                elMcp.classList.replace('border-sky-500/50', 'border-emerald-500/50');
+
+            } else {
+                // Restore standard MCP Server look
+                elMcp.classList.remove('mcp-port');
+                elMcpTitle.innerText = "MCP Server";
+                elMcpIconBg.className = "w-10 h-10 bg-gradient-to-br from-sky-600 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg border border-sky-400/30 mcp-icon";
+                elMcp.classList.replace('border-emerald-500/50', 'border-sky-500/50');
+            }
+
+            placeMcpServer();
+            setTimeout(drawConnections, 50);
+        }
+
+        function placeMcpServer() {
+            // Reset Styles
+            elMcp.style.position = 'relative';
+            elMcp.style.left = 'auto';
+            elMcp.style.top = 'auto';
+            elMcp.style.margin = '0';
+            elMcp.style.marginBottom = '0';
+            elMcp.style.transform = '';
+
+            if (currentMode === 'local') {
+                elSlotLocal.appendChild(elMcp);
+                elMcp.style.marginBottom = '20px';
+                elMcp.classList.add('system-off');
+                elStatusDot.classList.replace('bg-green-500', 'bg-slate-600');
+            } else if (currentMode === 'remote') {
+                elSlotRemote.appendChild(elMcp);
+                elMcp.classList.remove('system-off');
+                elStatusDot.classList.replace('bg-slate-600', 'bg-green-500');
+            } else if (currentMode === 'monolith') {
+                const backend = document.getElementById('sys-backend');
+                backend.style.position = 'relative';
+                backend.style.overflow = 'visible';
+
+                // We want the port on the LEFT side of backend
+                elMcp.style.position = 'absolute';
+                elMcp.style.left = '-38px'; // Width of port approx
+                elMcp.style.top = '0';
+                elMcp.style.bottom = '0';
+                elMcp.style.height = '100%';
+
+                backend.appendChild(elMcp);
+
+                elMcp.classList.remove('system-off');
+                elStatusDot.classList.replace('bg-slate-600', 'bg-green-500');
+            }
+            drawConnections();
+        }
+
+        function resetSim() {
+            currentStep = -1;
+            elLog.innerHTML = '<div class="text-slate-600 italic">// Warten auf User Input...</div>';
+            elChat.innerHTML = '';
+
+            document.getElementById('step-counter').innerText = "Start";
+            document.getElementById('step-title').innerText = "Bereit";
+            document.getElementById('step-desc').innerText = "Wähle einen Modus. Der Prozess beginnt mit einem User-Prompt.";
+            document.getElementById('btn-next').disabled = false;
+            document.getElementById('btn-next').innerHTML = `Nächster Schritt <i data-lucide="chevron-right" size="16" class="ml-2"></i>`;
+
+            hideBadges();
+            placeMcpServer();
+        }
+
+        async function nextStep() {
+            if (isAnimating || currentStep >= 5) return;
+            currentStep++;
+            isAnimating = true;
+            document.getElementById('btn-next').disabled = true;
+
+            const stepData = steps[currentStep];
+            document.getElementById('step-counter').innerText = `${currentStep} / 5`;
+            document.getElementById('step-title').innerText = stepData.title;
+            document.getElementById('step-desc').innerText = stepData.desc;
+
+            await stepData.action();
+
+            isAnimating = false;
+            if (currentStep < 5) {
+                document.getElementById('btn-next').disabled = false;
+            } else {
+                document.getElementById('btn-next').innerHTML = `Fertig <i data-lucide="check" size="16" class="ml-2"></i>`;
+            }
+        }
+
+        function drawConnections() {
+            const svg = svgLayer;
+            svg.innerHTML = '';
+            const containerRect = elDiagram.getBoundingClientRect();
+
+            const getAnchor = (id, side) => {
+                const el = document.getElementById(id);
+                if (!el || el.offsetParent === null) return { x: 0, y: 0 };
+                const rect = el.getBoundingClientRect();
+                const centerY = rect.top + rect.height / 2 - containerRect.top;
+                const centerX = rect.left + rect.width / 2 - containerRect.left;
+
+                if (side === 'left') return { x: rect.left - containerRect.left, y: centerY };
+                if (side === 'right') return { x: rect.right - containerRect.left, y: centerY };
+                if (side === 'top') return { x: centerX, y: rect.top - containerRect.top };
+                if (side === 'bottom') return { x: centerX, y: rect.bottom - containerRect.top };
+                return { x: centerX, y: centerY };
+            };
+
+            const drawLine = (p1, p2, type) => {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', p1.x);
+                line.setAttribute('y1', p1.y);
+                line.setAttribute('x2', p2.x);
+                line.setAttribute('y2', p2.y);
+
+                let cssClass = 'connector-line';
+                if (type === 'mcp') cssClass += ' connector-mcp';
+                if (type === 'mcp-highlight') cssClass += ' connector-mcp highlight';
+                if (type === 'model') cssClass += ' connector-model';
+
+                line.setAttribute('class', cssClass);
+                svg.appendChild(line);
+                return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+            };
+
+            const userRight = getAnchor('sys-user', 'right');
+            const clientLeft = getAnchor('sys-client', 'left');
+            const clientRight = getAnchor('sys-client', 'right');
+            const clientBottom = getAnchor('sys-client', 'bottom');
+            const modelLeft = getAnchor('sys-model', 'left');
+            const backendLeft = getAnchor('sys-backend', 'left');
+
+            // Re-calc anchors for MCP as it moves
+            const mcpTop = getAnchor('sys-mcp', 'top');
+            const mcpRight = getAnchor('sys-mcp', 'right');
+            const mcpLeft = getAnchor('sys-mcp', 'left');
+
+            // 1. User -> Client
+            const pChat = drawLine(userRight, clientLeft, 'standard');
+            elChat.style.left = `${pChat.x - 70}px`;
+            elChat.style.top = `${pChat.y - 15}px`;
+
+            // 2. Client -> Model
+            drawLine(clientRight, modelLeft, 'model');
+
+            // 3. Client -> MCP
+            let pMcpConn;
+            if (currentMode === 'local') {
+                pMcpConn = drawLine(clientBottom, mcpTop, 'mcp-highlight');
+                elMcpConnLabel.style.display = 'none'; // Usually STDIO, no big label needed or 'Pipe'
+            } else {
+                // In remote, we connect to the Left side of MCP
+                pMcpConn = drawLine(clientRight, mcpLeft, 'mcp-highlight');
+                if (currentMode === 'monolith') {
+                    elMcpConnLabel.style.display = 'block';
+                    elMcpConnLabel.style.left = `${pMcpConn.x}px`;
+                    elMcpConnLabel.style.top = `${pMcpConn.y}px`;
+                } else {
+                    elMcpConnLabel.style.display = 'none'; // Remote Microservice has separate box
+                }
+            }
+
+            // 4. MCP -> Backend (Only if NOT Monolith)
+            if (currentMode === 'remote') {
+                const pRest = drawLine(mcpRight, backendLeft, 'standard');
+                elRestLabel.style.display = 'block';
+                elRestLabel.style.left = `${pRest.x}px`;
+                elRestLabel.style.top = `${pRest.y}px`;
+            } else if (currentMode === 'local') {
+                const pRest = drawLine(mcpRight, backendLeft, 'standard');
+                elRestLabel.style.display = 'block';
+                elRestLabel.style.left = `${pRest.x}px`;
+                elRestLabel.style.top = `${pRest.y}px`;
+            } else {
+                // Monolith: No external line needed, it's internal
+                elRestLabel.style.display = 'none';
+            }
+        }
+
+        // Animation Helper ... (Same as before)
+        function addChatMessage(text, type) {
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${type === 'user' ? 'chat-user' : 'chat-agent'}`;
+            bubble.innerText = text;
+            elChat.appendChild(bubble);
+        }
+
+        function animatePacket(fromId, toId, color, fromSide = 'right', toSide = 'left') {
+            return new Promise(resolve => {
+                drawConnections();
+                const fromEl = document.getElementById(fromId);
+                const toEl = document.getElementById(toId);
+                const containerRect = elDiagram.getBoundingClientRect();
+                const rectFrom = fromEl.getBoundingClientRect();
+                const rectTo = toEl.getBoundingClientRect();
+
+                const getRelativeCoord = (rect, side) => {
+                    const cx = rect.left + rect.width / 2 - containerRect.left;
+                    const cy = rect.top + rect.height / 2 - containerRect.top;
+                    if (side === 'left') return { x: rect.left - containerRect.left, y: cy };
+                    if (side === 'right') return { x: rect.right - containerRect.left, y: cy };
+                    if (side === 'top') return { x: cx, y: rect.top - containerRect.top };
+                    if (side === 'bottom') return { x: cx, y: rect.bottom - containerRect.top };
+                    return { x: cx, y: cy };
+                };
+
+                const startP = getRelativeCoord(rectFrom, fromSide);
+                const endP = getRelativeCoord(rectTo, toSide);
+
+                elPacket.style.backgroundColor = color;
+                elPacket.style.boxShadow = `0 0 12px ${color}`;
+                elPacket.style.left = `${startP.x}px`;
+                elPacket.style.top = `${startP.y}px`;
+                elPacket.style.display = 'block';
+                elPacket.style.transition = 'none';
+
+                void elPacket.offsetWidth;
+
+                const distance = Math.hypot(endP.x - startP.x, endP.y - startP.y);
+                const duration = Math.max(0.8, distance / 250);
+
+                elPacket.style.transition = `left ${duration}s linear, top ${duration}s linear`;
+                elPacket.style.left = `${endP.x}px`;
+                elPacket.style.top = `${endP.y}px`;
+
+                setTimeout(() => {
+                    elPacket.style.display = 'none';
+                    resolve();
+                }, duration * 1000);
+            });
+        }
+
+        function log(msg, type = 'text') {
+            const row = document.createElement('div');
+            let colorClass = "text-slate-400";
+            let borderClass = "border-transparent";
+            if (type === 'req') { colorClass = "text-blue-300"; borderClass = "border-blue-500"; }
+            if (type === 'res') { colorClass = "text-green-300"; borderClass = "border-green-500"; }
+            if (type === 'rest') { colorClass = "text-amber-300"; borderClass = "border-amber-500"; }
+            if (type === 'sys') { colorClass = "text-purple-300 italic"; borderClass = "border-purple-500"; }
+            if (type === 'info') { colorClass = "text-white font-bold"; borderClass = "border-slate-500"; }
+            row.className = `py-1 ${colorClass} border-l-2 ${borderClass} pl-2`;
+            row.innerText = `> ${msg}`;
+            elLog.appendChild(row);
+            elLog.scrollTop = elLog.scrollHeight;
+        }
+
+        function logDetail(summary, detailJson, type) {
+            const container = document.createElement('div');
+            container.className = "group relative py-1 flex items-center gap-3 cursor-help hover:bg-white/5 rounded px-2 -mx-2 transition-colors";
+            let colorClass = "text-slate-400";
+            let icon = "arrow-right";
+            if (type === 'req') { colorClass = "text-blue-300"; icon = "arrow-right"; }
+            if (type === 'res') { colorClass = "text-green-300"; icon = "arrow-left"; }
+            if (type === 'rest') { colorClass = "text-amber-300"; icon = "globe"; }
+
+            if (detailJson) {
+                container.addEventListener('mouseenter', () => showGlobalTooltip(summary, detailJson));
+                container.addEventListener('mouseleave', hideGlobalTooltip);
+            }
+
+            container.innerHTML = `
+                <i data-lucide="${icon}" size="14" class="${colorClass}"></i>
+                <span class="${colorClass} truncate flex-grow font-medium">${summary}</span>
+                ${detailJson ? `<i data-lucide="search" size="16" class="text-slate-500 group-hover:text-white transition-colors"></i>` : ''}
+            `;
+            elLog.appendChild(container);
+            lucide.createIcons();
+            elLog.scrollTop = elLog.scrollHeight;
+        }
+
+        function showGlobalTooltip(title, json) {
+            elTooltipTitle.textContent = title;
+            const formatted = json.replace(/[{}:,]/g, m => `<span class="text-slate-500">${m}</span>`);
+            elTooltipContent.innerHTML = formatted;
+            elTooltip.classList.remove('hidden');
+        }
+
+        function hideGlobalTooltip() { elTooltip.classList.add('hidden'); }
+        function showBadge(el, text) { el.innerText = text; el.classList.add('show-op'); }
+        function hideBadges() { [badgeClient, badgeMcp, badgeBackend, badgeModel].forEach(b => { if (b) b.classList.remove('show-op'); }); }
+        function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        // Init
+        setMode('local');
+        window.addEventListener('resize', drawConnections);
+    </script>
+</body>
+
+</html>
