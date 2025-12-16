@@ -13,8 +13,12 @@
             background-color: #020617;
             /* Slate 950 */
             color: #e2e8f0;
-            overflow: hidden;
-            height: 100vh;
+            /* Changed from fixed height to min-height for better mobile support */
+            min-height: 100vh;
+            overflow-x: hidden;
+            /* Prevent page-wide scroll, handle in containers */
+            display: flex;
+            flex-direction: column;
         }
 
         .code-font {
@@ -72,7 +76,6 @@
             border-color: #10b981 !important;
             /* Emerald for Monolith */
             position: absolute;
-            /* Essential for relative positioning of label */
         }
 
         .mcp-port .mcp-icon {
@@ -100,7 +103,6 @@
 
         .mcp-port #protocol-label {
             display: none;
-            /* Hide protocol badge inside port, we show it on line */
         }
 
         .mcp-port .status-dot {
@@ -269,7 +271,6 @@
             flex-direction: column;
             gap: 4px;
             pointer-events: none;
-            /* Let clicks pass through */
         }
 
         .chat-bubble {
@@ -340,7 +341,7 @@
     </style>
 </head>
 
-<body class="h-screen flex flex-col relative" onresize="drawConnections()">
+<body class="min-h-screen flex flex-col relative" onresize="drawConnections()">
 
     <!-- LANDING PAGE -->
     <div id="landing-page"
@@ -364,7 +365,7 @@
 
     <!-- HEADER -->
     <header class="bg-slate-900 border-b border-slate-800 p-3 shrink-0 z-50 shadow-md">
-        <div class="max-w-[1400px] mx-auto flex justify-between items-center gap-4">
+        <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <span class="bg-sky-500/10 text-sky-400 p-1.5 rounded-lg border border-sky-500/20"><i data-lucide="box"
                         size="20"></i></span>
@@ -374,7 +375,7 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap justify-center items-center gap-2 md:gap-4">
                 <!-- Group: Local -->
                 <button onclick="setMode('local')" id="btn-local"
                     class="flex items-center gap-2 px-3 py-2 rounded text-xs font-medium transition-colors bg-sky-600 text-white shadow-lg">
@@ -382,11 +383,12 @@
                 </button>
 
                 <!-- Separator -->
-                <div class="h-6 w-px bg-slate-700"></div>
+                <div class="hidden md:block h-6 w-px bg-slate-700"></div>
 
                 <!-- Group: Remote -->
-                <div class="flex bg-slate-950 rounded-lg p-1 border border-slate-800 gap-1">
-                    <span class="text-[10px] text-slate-500 uppercase font-bold px-2 flex items-center">Remote:</span>
+                <div class="flex flex-wrap justify-center bg-slate-950 rounded-lg p-1 border border-slate-800 gap-1">
+                    <span
+                        class="text-[10px] text-slate-500 uppercase font-bold px-2 flex items-center hidden sm:flex">Remote:</span>
                     <button onclick="setMode('remote')" id="btn-remote"
                         class="flex items-center gap-2 px-3 py-2 rounded text-xs font-medium transition-colors text-slate-400 hover:text-white hover:bg-slate-800">
                         <i data-lucide="cloud" size="14"></i> Microservice
@@ -401,152 +403,154 @@
     </header>
 
     <!-- MAIN STAGE -->
-    <main class="flex-grow flex flex-col items-center p-4 relative w-full max-w-[1400px] mx-auto">
+    <main class="flex-grow flex flex-col items-center p-4 relative w-full max-w-[1400px] mx-auto overflow-hidden">
 
         <!-- Scenario Info -->
-        <div class="text-center mb-2 shrink-0 h-10">
+        <div class="text-center mb-2 shrink-0 h-auto md:h-10">
             <h2 id="scenario-title" class="text-xl font-bold text-white transition-all">Lokaler Modus</h2>
             <p id="scenario-desc" class="text-slate-400 text-sm">MCP-Server läuft als lokaler Prozess.</p>
         </div>
 
-        <!-- DIAGRAM CONTAINER -->
-        <div id="diagram-container"
-            class="relative w-full flex items-center justify-center gap-32 h-[320px] shrink-0 mt-12 mb-4">
+        <!-- DIAGRAM CONTAINER WRAPPER (Scrollable) -->
+        <div class="w-full overflow-x-auto pb-4 custom-scrollbar">
+            <!-- DIAGRAM CONTAINER (Fixed Min Width to preserve layout) -->
+            <div id="diagram-container"
+                class="relative min-w-[900px] w-full flex items-center justify-center gap-16 lg:gap-32 h-[320px] shrink-0 mt-8 mb-4 mx-auto">
 
-            <!-- SVG LAYER FOR LINES -->
-            <svg id="connections-layer">
-                <!-- Lines will be injected by JS -->
-            </svg>
+                <!-- SVG LAYER FOR LINES -->
+                <svg id="connections-layer">
+                    <!-- Lines will be injected by JS -->
+                </svg>
 
-            <!-- Labels (Absolute) -->
-            <div id="rest-label" class="line-label">REST</div>
-            <!-- Updated Label -->
-            <div id="mcp-conn-label" class="line-label">HTTP (SSE)</div>
+                <!-- Labels (Absolute) -->
+                <div id="rest-label" class="line-label">REST</div>
+                <!-- Updated Label -->
+                <div id="mcp-conn-label" class="line-label">HTTP (SSE)</div>
 
-            <!-- Packet Element -->
-            <div id="packet" class="packet"></div>
+                <!-- Packet Element -->
+                <div id="packet" class="packet"></div>
 
-            <!-- CHAT INTERFACE -->
-            <div id="chat-interface"></div>
+                <!-- CHAT INTERFACE -->
+                <div id="chat-interface"></div>
 
-            <!-- 1. USER COLUMN -->
-            <div class="flex flex-col items-center justify-center gap-2 z-30" id="wrapper-user">
-                <div id="sys-user"
-                    class="system-box w-24 h-24 rounded-full flex flex-col items-center justify-center gap-1 border-2 border-slate-600 shadow-lg">
-                    <i data-lucide="user" size="28" class="text-slate-300"></i>
-                    <span class="text-[10px] font-bold text-white uppercase">Du</span>
-                </div>
-            </div>
-
-            <!-- PROMPT BUBBLE -->
-            <div class="text-[10px] text-center text-slate-400 bg-slate-900/90 px-3 py-1.5 rounded-full border border-slate-700 opacity-0 shadow-xl"
-                id="user-bubble">
-                "Grüße Max"
-            </div>
-
-            <!-- 2. COMPUTER AREA -->
-            <div class="area-container w-[220px] h-full pt-8 pb-4 px-4 flex flex-col items-center justify-between relative"
-                id="area-user">
-                <div
-                    class="absolute -top-3 left-4 bg-slate-900 px-3 text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border border-slate-700 rounded-full py-0.5 z-40">
-                    <i data-lucide="laptop" size="12"></i> Dein Computer
+                <!-- 1. USER COLUMN -->
+                <div class="flex flex-col items-center justify-center gap-2 z-30" id="wrapper-user">
+                    <div id="sys-user"
+                        class="system-box w-24 h-24 rounded-full flex flex-col items-center justify-center gap-1 border-2 border-slate-600 shadow-lg">
+                        <i data-lucide="user" size="28" class="text-slate-300"></i>
+                        <span class="text-[10px] font-bold text-white uppercase">Du</span>
+                    </div>
                 </div>
 
-                <!-- ROW 1: CLIENT NODE -->
-                <div id="sys-client"
-                    class="system-box w-full bg-slate-800 border-2 border-slate-600 p-3 rounded-xl flex flex-col items-center gap-2 z-30 shadow-xl">
-                    <div class="op-badge" id="badge-client"></div>
+                <!-- PROMPT BUBBLE -->
+                <div class="text-[10px] text-center text-slate-400 bg-slate-900/90 px-3 py-1.5 rounded-full border border-slate-700 opacity-0 shadow-xl"
+                    id="user-bubble">
+                    "Grüße Max"
+                </div>
+
+                <!-- 2. COMPUTER AREA -->
+                <div class="area-container w-[220px] h-full pt-8 pb-4 px-4 flex flex-col items-center justify-between relative"
+                    id="area-user">
                     <div
-                        class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-lg">
-                        <i data-lucide="bot" size="24"></i>
-                    </div>
-                    <div class="text-center">
-                        <div class="font-bold text-white text-sm">MCP-Client</div>
-                        <!-- Updated Description -->
-                        <div class="text-[10px] text-slate-400">KI-Agent</div>
-                    </div>
-                </div>
-
-                <!-- ROW 2: SLOT FOR LOCAL MCP -->
-                <div id="slot-local"
-                    class="w-full h-32 flex flex-col justify-end items-center relative rounded-xl flex-grow-0">
-                    <!-- MCP Server will land here -->
-                </div>
-            </div>
-
-            <!-- 3. CLOUD AREA -->
-            <div class="area-container w-[380px] h-full pt-8 pb-4 px-4 flex flex-col items-center justify-between relative"
-                id="area-cloud">
-                <div
-                    class="absolute -top-3 left-4 bg-slate-900 px-3 text-slate-500 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border border-slate-800 rounded-full py-0.5 z-40">
-                    <i data-lucide="server" size="12"></i> Cloud / RZ
-                </div>
-
-                <!-- ROW 1: AI MODEL NODE -->
-                <div class="w-full flex justify-center">
-                    <div id="sys-model"
-                        class="system-box w-48 bg-slate-900 border border-slate-700 p-3 rounded-lg flex flex-row items-center gap-3 z-30 shadow-lg">
-                        <div class="op-badge" id="badge-model"></div>
-                        <div class="relative shrink-0">
-                            <i data-lucide="brain-circuit" size="24" class="brain-icon"></i>
-                        </div>
-                        <div class="text-left">
-                            <div class="font-semibold text-slate-300 text-xs">KI-Modell</div>
-                            <div class="text-[9px] text-slate-500">LLM API (Inference)</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ROW 2: REMOTE SLOT + BACKEND -->
-                <div class="w-full h-32 flex flex-row items-end justify-center gap-4 relative">
-
-                    <!-- SLOT FOR REMOTE MCP -->
-                    <div id="slot-remote"
-                        class="w-40 h-full relative flex flex-col justify-end items-center pb-2 transition-all duration-300">
-                        <!-- MCP Server lands here -->
+                        class="absolute -top-3 left-4 bg-slate-900 px-3 text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border border-slate-700 rounded-full py-0.5 z-40">
+                        <i data-lucide="laptop" size="12"></i> Dein Computer
                     </div>
 
-                    <!-- BACKEND NODE -->
-                    <div id="sys-backend"
-                        class="system-box w-32 bg-slate-900 border border-slate-700 p-3 rounded-lg flex flex-col items-center gap-2 z-30 opacity-70 scale-95 shadow-lg mb-2 relative transition-all duration-300">
-                        <div class="op-badge" id="badge-backend"></div>
+                    <!-- ROW 1: CLIENT NODE -->
+                    <div id="sys-client"
+                        class="system-box w-full bg-slate-800 border-2 border-slate-600 p-3 rounded-xl flex flex-col items-center gap-2 z-30 shadow-xl">
+                        <div class="op-badge" id="badge-client"></div>
                         <div
-                            class="w-10 h-10 bg-emerald-900/30 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-900/50 shrink-0">
-                            <i data-lucide="database" size="20"></i>
+                            class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center text-white shadow-lg">
+                            <i data-lucide="bot" size="24"></i>
                         </div>
                         <div class="text-center">
-                            <div class="font-semibold text-slate-300 text-xs">Backend</div>
-                            <div class="text-[9px] text-slate-500">Externes System</div>
+                            <div class="font-bold text-white text-sm">MCP-Client</div>
+                            <div class="text-[10px] text-slate-400">KI-Agent</div>
                         </div>
                     </div>
 
-                </div>
-            </div>
-
-            <!-- THE MOVEABLE MCP SERVER NODE -->
-            <div id="sys-mcp"
-                class="system-box w-36 bg-slate-800 border-2 border-sky-500/50 p-2 rounded-xl flex flex-row items-center gap-2 z-50 shadow-2xl shadow-sky-900/20 transition-all duration-300">
-                <div class="op-badge" id="badge-mcp"></div>
-                <div class="relative shrink-0">
-                    <div id="mcp-icon-bg"
-                        class="w-10 h-10 bg-gradient-to-br from-sky-600 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg border border-sky-400/30 mcp-icon">
-                        <i data-lucide="cpu" size="20"></i>
+                    <!-- ROW 2: SLOT FOR LOCAL MCP -->
+                    <div id="slot-local"
+                        class="w-full h-32 flex flex-col justify-end items-center relative rounded-xl flex-grow-0">
+                        <!-- MCP Server will land here -->
                     </div>
-                    <div id="mcp-status-dot"
-                        class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-800 flex items-center justify-center bg-slate-900 status-dot">
-                        <div id="status-dot"
-                            class="w-2 h-2 rounded-full bg-slate-600 transition-colors duration-300 shadow-[0_0_8px_rgba(0,0,0,1)]">
+                </div>
+
+                <!-- 3. CLOUD AREA -->
+                <div class="area-container w-[380px] h-full pt-8 pb-4 px-4 flex flex-col items-center justify-between relative"
+                    id="area-cloud">
+                    <div
+                        class="absolute -top-3 left-4 bg-slate-900 px-3 text-slate-500 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border border-slate-800 rounded-full py-0.5 z-40">
+                        <i data-lucide="server" size="12"></i> Cloud / RZ
+                    </div>
+
+                    <!-- ROW 1: AI MODEL NODE -->
+                    <div class="w-full flex justify-center">
+                        <div id="sys-model"
+                            class="system-box w-48 bg-slate-900 border border-slate-700 p-3 rounded-lg flex flex-row items-center gap-3 z-30 shadow-lg">
+                            <div class="op-badge" id="badge-model"></div>
+                            <div class="relative shrink-0">
+                                <i data-lucide="brain-circuit" size="24" class="brain-icon"></i>
+                            </div>
+                            <div class="text-left">
+                                <div class="font-semibold text-slate-300 text-xs">KI-Modell</div>
+                                <div class="text-[9px] text-slate-500">LLM API (Inference)</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="text-left mcp-label">
-                    <div class="font-bold text-white text-xs" id="mcp-title">MCP Server</div>
-                    <div class="text-[9px] text-sky-300 font-mono mt-0.5 px-1.5 py-0.5 bg-sky-950 rounded border border-sky-800 inline-block"
-                        id="protocol-label">STDIO</div>
-                </div>
-            </div>
 
-        </div> <!-- End Diagram -->
+                    <!-- ROW 2: REMOTE SLOT + BACKEND -->
+                    <div class="w-full h-32 flex flex-row items-end justify-center gap-4 relative">
+
+                        <!-- SLOT FOR REMOTE MCP -->
+                        <div id="slot-remote"
+                            class="w-40 h-full relative flex flex-col justify-end items-center pb-2 transition-all duration-300">
+                            <!-- MCP Server lands here -->
+                        </div>
+
+                        <!-- BACKEND NODE -->
+                        <div id="sys-backend"
+                            class="system-box w-32 bg-slate-900 border border-slate-700 p-3 rounded-lg flex flex-col items-center gap-2 z-30 opacity-70 scale-95 shadow-lg mb-2 relative transition-all duration-300">
+                            <div class="op-badge" id="badge-backend"></div>
+                            <div
+                                class="w-10 h-10 bg-emerald-900/30 text-emerald-500 rounded-lg flex items-center justify-center border border-emerald-900/50 shrink-0">
+                                <i data-lucide="database" size="20"></i>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-slate-300 text-xs">Backend</div>
+                                <div class="text-[9px] text-slate-500">Externes System</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- THE MOVEABLE MCP SERVER NODE -->
+                <div id="sys-mcp"
+                    class="system-box w-36 bg-slate-800 border-2 border-sky-500/50 p-2 rounded-xl flex flex-row items-center gap-2 z-50 shadow-2xl shadow-sky-900/20 transition-all duration-300">
+                    <div class="op-badge" id="badge-mcp"></div>
+                    <div class="relative shrink-0">
+                        <div id="mcp-icon-bg"
+                            class="w-10 h-10 bg-gradient-to-br from-sky-600 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg border border-sky-400/30 mcp-icon">
+                            <i data-lucide="cpu" size="20"></i>
+                        </div>
+                        <div id="mcp-status-dot"
+                            class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-800 flex items-center justify-center bg-slate-900 status-dot">
+                            <div id="status-dot"
+                                class="w-2 h-2 rounded-full bg-slate-600 transition-colors duration-300 shadow-[0_0_8px_rgba(0,0,0,1)]">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-left mcp-label">
+                        <div class="font-bold text-white text-xs" id="mcp-title">MCP Server</div>
+                        <div class="text-[9px] text-sky-300 font-mono mt-0.5 px-1.5 py-0.5 bg-sky-950 rounded border border-sky-800 inline-block"
+                            id="protocol-label">STDIO</div>
+                    </div>
+                </div>
+
+            </div> <!-- End Diagram -->
+        </div>
 
         <!-- Global Tooltip Overlay -->
         <div id="global-tooltip"
@@ -560,24 +564,26 @@
         </div>
 
         <!-- CONTROLS & LOG -->
-        <div class="w-full flex flex-col md:flex-row gap-6 h-[220px] shrink-0 mt-2">
+        <!-- Fixed height on desktop to prevent expansion, auto on mobile for stacking -->
+        <div class="w-full flex flex-col md:flex-row gap-6 shrink-0 mt-4 h-auto md:h-64">
 
             <!-- Controls -->
-            <div class="w-full md:w-1/3 flex flex-col gap-3">
-                <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700 shadow-lg flex-grow flex flex-col">
-                    <div class="flex justify-between items-center mb-2 border-b border-slate-700 pb-2">
+            <div class="w-full md:w-1/3 flex flex-col gap-3 h-auto md:h-full">
+                <div
+                    class="bg-slate-800/80 rounded-xl p-4 border border-slate-700 shadow-lg flex-grow flex flex-col justify-between">
+                    <div class="flex justify-between items-center mb-2 border-b border-slate-700 pb-2 shrink-0">
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Ablaufsteuerung</span>
                         <span id="step-counter" class="text-sky-400 font-bold font-mono text-base">Start</span>
                     </div>
 
-                    <div class="my-2 flex-grow">
+                    <div class="my-2 flex-grow overflow-y-auto custom-scrollbar">
                         <h3 id="step-title" class="font-bold text-white text-base mb-1">Bereit</h3>
                         <p id="step-desc" class="text-sm text-slate-400 leading-snug">
                             Wähle einen Modus. Der Prozess beginnt mit einem User-Prompt.
                         </p>
                     </div>
 
-                    <div class="flex gap-3 mt-auto">
+                    <div class="flex gap-3 mt-auto shrink-0">
                         <button onclick="resetSim()"
                             class="px-4 py-2 text-slate-400 hover:text-white bg-slate-700/50 hover:bg-slate-600 rounded-lg transition-colors"
                             title="Reset">
@@ -594,8 +600,9 @@
 
             <!-- Log Console -->
             <div
-                class="w-full md:w-2/3 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex flex-col shadow-inner">
-                <div class="bg-slate-900 px-4 py-2 border-b border-slate-800 flex justify-between items-center">
+                class="w-full md:w-2/3 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex flex-col shadow-inner h-64 md:h-full">
+                <div
+                    class="bg-slate-900 px-4 py-2 border-b border-slate-800 flex justify-between items-center shrink-0">
                     <span class="text-xs font-bold text-slate-400 flex items-center gap-2">
                         <i data-lucide="terminal" size="14"></i> PROTOKOLL
                     </span>
@@ -1122,7 +1129,7 @@
                 void elPacket.offsetWidth;
 
                 const distance = Math.hypot(endP.x - startP.x, endP.y - startP.y);
-                const duration = Math.max(0.8, distance / 250);
+                const duration = Math.max(0.6, distance / 300); // 20% faster animation
 
                 elPacket.style.transition = `left ${duration}s linear, top ${duration}s linear`;
                 elPacket.style.left = `${endP.x}px`;
