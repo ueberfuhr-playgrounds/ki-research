@@ -46,6 +46,8 @@
             background-color: #1e293b;
             /* Slate 800 */
             z-index: 20;
+            user-select: none;
+            /* Prevent selection while dragging */
         }
 
         .system-box.active {
@@ -173,6 +175,7 @@
             position: relative;
             transition: all 0.5s ease;
             background-color: rgba(15, 23, 42, 0.4);
+            user-select: none;
         }
 
         /* SVG Lines Layer */
@@ -339,10 +342,14 @@
         /* Zoom Container */
         #zoom-wrapper {
             overflow: hidden;
-            /* We handle scaling inside */
-            touch-action: none;
-            /* Prevent browser zoom/scroll inside this area */
             cursor: grab;
+            touch-action: none;
+            /* Prevent browser scrolling */
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         #zoom-wrapper:active {
@@ -350,15 +357,17 @@
         }
 
         #diagram-scale-layer {
-            transform-origin: top left;
+            transform-origin: center center;
+            /* Zoom from center */
             transition: transform 0.1s ease-out;
+            /* Will be centered by flexbox of parent */
         }
     </style>
 </head>
 
 <body class="min-h-screen flex flex-col relative" onresize="drawConnections()">
 
-    <!-- LANDING PAGE (Compact for Mobile) -->
+    <!-- LANDING PAGE -->
     <div id="landing-page"
         class="absolute inset-0 z-[60] bg-slate-950 flex flex-col items-center justify-center p-4 text-center transition-opacity duration-500 overflow-hidden h-screen">
         <div class="mb-4 relative scale-75 md:scale-100">
@@ -397,14 +406,13 @@
                     <i data-lucide="monitor" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Lokal
                 </button>
                 <div class="hidden md:block h-6 w-px bg-slate-700"></div>
-                <!-- REMOTE GROUP -->
                 <div
                     class="flex flex-wrap justify-center bg-slate-950 rounded-lg p-0.5 border border-slate-800 gap-0.5">
                     <span class="text-[10px] text-slate-500 uppercase font-bold px-2 flex items-center">Remote:</span>
                     <button onclick="setMode('remote')" id="btn-remote"
                         class="flex items-center gap-1 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded text-[10px] md:text-xs font-medium transition-colors text-slate-400 hover:text-white hover:bg-slate-800"
                         title="Eigenständigen Remote-Service verwenden">
-                        <i data-lucide="cloud" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Service
+                        <i data-lucide="cloud" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Microservice
                     </button>
                     <button onclick="setMode('monolith')" id="btn-monolith"
                         class="flex items-center gap-1 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded text-[10px] md:text-xs font-medium transition-colors text-slate-400 hover:text-white hover:bg-slate-800"
@@ -428,9 +436,9 @@
         <!-- ZOOM WRAPPER -->
         <div class="w-full relative bg-slate-900/30 rounded-xl border border-slate-800/50 overflow-hidden mt-4 md:mt-8"
             style="height: 400px;">
-            <!-- Zoom Controls (Hidden on Desktop) -->
+            <!-- Zoom Controls (Visible always) -->
             <div
-                class="absolute top-2 right-2 flex flex-col gap-1 z-50 bg-slate-900/80 backdrop-blur rounded-lg border border-slate-700 p-1 md:hidden">
+                class="absolute top-2 right-2 flex flex-col gap-1 z-50 bg-slate-900/80 backdrop-blur rounded-lg border border-slate-700 p-1">
                 <button onclick="changeZoom(0.1)" class="p-1.5 hover:bg-slate-700 rounded text-slate-300"
                     title="Vergrößern"><i data-lucide="plus" class="w-4 h-4"></i></button>
                 <button onclick="resetZoom()" class="p-1.5 hover:bg-slate-700 rounded text-slate-300"
@@ -440,7 +448,7 @@
             </div>
 
             <!-- Touch/Pan Container -->
-            <div id="zoom-wrapper" class="w-full h-full flex items-center justify-center">
+            <div id="zoom-wrapper">
                 <!-- Transform Layer -->
                 <div id="diagram-scale-layer">
 
@@ -576,35 +584,25 @@
                             beginnt mit einem User-Prompt.</p>
                     </div>
 
-                    <!-- NEW CONTROLS -->
                     <div
                         class="flex items-center gap-2 mt-auto shrink-0 bg-slate-900/50 p-1 rounded-lg border border-slate-700">
-                        <!-- Reset -->
                         <button onclick="resetSim()"
                             class="p-2.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md transition-colors"
                             title="Simulation zurücksetzen">
                             <i data-lucide="rotate-ccw" size="18"></i>
                         </button>
-
-                        <!-- Separator -->
                         <div class="w-px h-6 bg-slate-700"></div>
-
-                        <!-- Step Back -->
                         <button onclick="prevStep()" id="btn-prev"
                             class="flex-1 p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-md font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex justify-center"
                             title="Schritt zurück">
                             <i data-lucide="chevron-left" size="18"></i>
                         </button>
-
-                        <!-- Play/Pause -->
                         <button onclick="togglePlay()" id="btn-play"
                             class="flex-1 p-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-md font-bold shadow-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex justify-center"
                             title="Abspielen / Pausieren">
                             <i id="icon-play" data-lucide="play" size="18"></i>
                             <i id="icon-pause" data-lucide="pause" size="18" class="hidden"></i>
                         </button>
-
-                        <!-- Step Forward -->
                         <button onclick="nextStep()" id="btn-next"
                             class="flex-1 p-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-md font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex justify-center"
                             title="Schritt vor">
@@ -637,7 +635,7 @@
         let isAnimating = false;
         let isAutoPlaying = false;
 
-        // Zoom State
+        // Zoom & Pan State
         let currentScale = 1.0;
         let panX = 0; let panY = 0; let isDragging = false;
         let startX, startY; let initialDistance = 0; let initialScale = 1.0;
@@ -646,6 +644,7 @@
         const elLanding = document.getElementById('landing-page');
         const elZoomWrapper = document.getElementById('zoom-wrapper');
         const elScaleLayer = document.getElementById('diagram-scale-layer');
+        const elDiagram = document.getElementById('diagram-container');
         const elMcp = document.getElementById('sys-mcp');
         const elMcpTitle = document.getElementById('mcp-title');
         const elMcpIconBg = document.getElementById('mcp-icon-bg');
@@ -662,14 +661,12 @@
         const elTooltip = document.getElementById('global-tooltip');
         const elTooltipContent = document.getElementById('tooltip-content');
         const elTooltipTitle = document.getElementById('tooltip-title');
-        const elDiagram = document.getElementById('diagram-container');
         const elRestLabel = document.getElementById('rest-label');
         const elMcpConnLabel = document.getElementById('mcp-conn-label');
 
         const btnPrev = document.getElementById('btn-prev');
         const btnNext = document.getElementById('btn-next');
         const btnPlay = document.getElementById('btn-play');
-        // Note: We don't fetch iconPlay/iconPause here anymore, but dynamically inside updateControls
 
         const lblProto = document.getElementById('protocol-label');
         const badgeClient = document.getElementById('badge-client');
@@ -677,7 +674,7 @@
         const badgeMcp = document.getElementById('badge-mcp');
         const badgeBackend = document.getElementById('badge-backend');
 
-        // Zoom Logic ... (Same as before)
+        // Zoom Logic
         function updateTransform() {
             elScaleLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${currentScale})`;
         }
@@ -686,27 +683,43 @@
             currentScale = newScale; updateTransform();
         }
         function resetZoom() {
-            const contentWidth = 1000;
-            const wrapperWidth = elZoomWrapper.clientWidth || window.innerWidth;
-            const wrapperHeight = elZoomWrapper.clientHeight || 400;
+            const diagramWidth = elDiagram.scrollWidth || 1000;
+            const wrapperWidth = elZoomWrapper.clientWidth;
+            const wrapperHeight = elZoomWrapper.clientHeight;
 
-            if (wrapperWidth < contentWidth) {
-                // Fit to width
-                currentScale = wrapperWidth / contentWidth;
-                // Center vertically roughly
-                panX = 0; // Starts at left 0 because it fills width
-                panY = (wrapperHeight - (400 * currentScale)) / 2; // Assume ~400px height
-            } else {
-                currentScale = 1.0;
-                panX = (wrapperWidth - contentWidth) / 2;
-                panY = (wrapperHeight - 400) / 2;
-            }
+            const fitScale = Math.min(1.0, (wrapperWidth - 40) / diagramWidth);
+            currentScale = fitScale;
+
+            const scaledWidth = diagramWidth * currentScale;
+
+            panX = 0;
+            panY = 0;
+
             updateTransform();
         }
 
-        // Initialize Zoom State Immediately
-        resetZoom();
+        // Mouse Pan
+        elZoomWrapper.addEventListener('mousedown', (e) => {
+            // Prevent text selection which interferes with dragging
+            e.preventDefault();
+            isDragging = true;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+            elZoomWrapper.style.cursor = 'grabbing';
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            updateTransform();
+        });
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            elZoomWrapper.style.cursor = 'grab';
+        });
 
+        // Touch Pan/Zoom
         elZoomWrapper.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - panX; startY = e.touches[0].clientY - panY; } else if (e.touches.length === 2) { isDragging = false; initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); initialScale = currentScale; }
         });
@@ -715,7 +728,17 @@
             if (e.touches.length === 1 && isDragging) { panX = e.touches[0].clientX - startX; panY = e.touches[0].clientY - startY; updateTransform(); } else if (e.touches.length === 2) { const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); const scaleDiff = dist / initialDistance; currentScale = Math.max(0.3, Math.min(2.0, initialScale * scaleDiff)); updateTransform(); }
         });
         elZoomWrapper.addEventListener('touchend', () => { isDragging = false; });
-        elZoomWrapper.addEventListener('wheel', (e) => { if (e.ctrlKey) { e.preventDefault(); changeZoom(e.deltaY > 0 ? -0.1 : 0.1); } });
+
+        // Mouse Wheel Zoom (Direct, no ctrl key needed based on user request)
+        elZoomWrapper.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            changeZoom(e.deltaY > 0 ? -0.1 : 0.1);
+        }, { passive: false });
+
+        function handleResize() {
+            resetZoom();
+            drawConnections();
+        }
 
         // Scenarios
         const scenarios = {
@@ -725,7 +748,7 @@
         };
 
         const steps = [
-            { id: 0, title: "0. User Prompt", desc: "Der Benutzer gibt eine Anweisung an den Client.", action: async () => { /* ... see below for DRY ... */ } },
+            { id: 0, title: "0. User Prompt", desc: "Der Benutzer gibt eine Anweisung an den Client.", action: async () => { /* ... */ } },
             { id: 1, title: "1. Handshake", desc: "Der Client stellt die Verbindung zum MCP-Server her.", action: async () => { } },
             { id: 2, title: "2. Tool Discovery", desc: "Der Client fragt ab, welche Tools verfügbar sind.", action: async () => { } },
             { id: 3, title: "3. Reasoning", desc: "Client sendet Prompt + Tools an das Modell. KI entscheidet.", action: async () => { } },
@@ -733,7 +756,7 @@
             { id: 5, title: "5. Final Response", desc: "Client sendet Tool-Ergebnis an KI. Diese formuliert die Antwort.", action: async () => { } }
         ];
 
-        // Re-injecting actions to ensure they are available in scope
+        // Action Implementations
         steps[0].action = async () => {
             document.getElementById('sys-user').classList.add('active');
             addChatMessage("Grüße Max", "user"); log("USER: 'Grüße Max'", 'info');
@@ -765,6 +788,7 @@
         steps[3].action = async () => {
             log("[Client] Sending Prompt + Tool List to Model...", 'req');
             await animatePacket('sys-client', 'sys-model', '#f472b6', 'right', 'left');
+            const elModel = document.getElementById('sys-model');
             elModel.classList.add('thinking'); showBadge(badgeModel, "Reasoning..."); await wait(2000); elModel.classList.remove('thinking'); hideBadges();
             log("[Model] Decided: Use tool 'say_hello'", 'res');
             await animatePacket('sys-model', 'sys-client', '#f472b6', 'left', 'right');
@@ -797,6 +821,7 @@
         steps[5].action = async () => {
             log("[Client] Sende Tool-Ergebnis an KI-Modell...", 'req');
             await animatePacket('sys-client', 'sys-model', '#f472b6', 'right', 'left');
+            const elModel = document.getElementById('sys-model');
             elModel.classList.add('thinking'); showBadge(badgeModel, "Generating..."); await wait(2000); elModel.classList.remove('thinking'); hideBadges();
             const finalRes = "Hallo Max! Wie geht es dir?";
             log(`[Model] Antwort generiert: "${finalRes}"`, 'res');
@@ -804,7 +829,7 @@
             addChatMessage(finalRes, "agent"); log(`AGENT: '${finalRes}'`, 'info'); showBadge(badgeClient, "Done");
         };
 
-        // Helpers for cleaner actions
+        // Helpers
         async function performRoundTrip(color, outFrom, outTo) {
             await animatePacket('sys-client', 'sys-mcp', color, outFrom, outTo);
         }
@@ -812,32 +837,41 @@
             await animatePacket('sys-mcp', 'sys-client', color, retFrom, retTo);
         }
 
-        // --- Core Logic ---
-
+        // Core Functions
         function startSimulation() {
-            elLanding.style.opacity = '0';
+            setMode('local');
+            resetZoom();
+            placeMcpServer();
+
+            // Wait 100ms for layout to stabilize, then draw lines, then reveal
             setTimeout(() => {
-                elLanding.style.display = 'none';
-                // INIT SEQUENCE: Place -> Draw -> Ensure Lines are Visible
-                placeMcpServer();
                 drawConnections();
-                // Ensure redraw a bit later to handle layout settling
-                setTimeout(drawConnections, 100);
-            }, 500);
+                // Reveal
+                elLanding.style.opacity = '0';
+                setTimeout(() => {
+                    elLanding.style.display = 'none';
+                    // Final safety redraw
+                    drawConnections();
+                }, 500);
+            }, 100);
         }
 
         function setMode(mode) {
             if (isAnimating) return;
             currentMode = mode; resetSim();
+
+            // Buttons UI logic
             const btnBase = "flex items-center gap-1 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded text-[10px] md:text-xs font-medium transition-colors ";
             const active = "bg-sky-600 text-white shadow-lg";
             const inactive = "text-slate-400 hover:text-white hover:bg-slate-800";
             document.getElementById('btn-local').className = btnBase + (mode === 'local' ? active : inactive);
             document.getElementById('btn-remote').className = btnBase + (mode === 'remote' ? active.replace('bg-sky-600', 'bg-purple-600') : inactive);
             document.getElementById('btn-monolith').className = btnBase + (mode === 'monolith' ? active.replace('bg-sky-600', 'bg-emerald-600') : inactive);
+
             document.getElementById('scenario-title').innerText = scenarios[mode].title;
             document.getElementById('scenario-desc').innerText = scenarios[mode].desc;
             lblProto.innerText = scenarios[mode].proto;
+
             if (mode === 'monolith') {
                 elRestLabel.style.display = 'none'; elMcpConnLabel.style.display = 'block';
                 elMcp.classList.add('mcp-port'); elMcpTitle.innerText = "MCP";
@@ -852,12 +886,18 @@
         }
 
         function placeMcpServer() {
+            // Reset Styles
             elMcp.style.position = 'relative'; elMcp.style.left = 'auto'; elMcp.style.top = 'auto';
             elMcp.style.margin = '0'; elMcp.style.marginBottom = '0'; elMcp.style.transform = '';
+            elMcp.style.height = ''; elMcp.style.bottom = ''; // Fix for Monolith height bug
+
             if (currentMode === 'local') {
-                elSlotLocal.appendChild(elMcp); elMcp.style.marginBottom = '20px'; elMcp.classList.add('system-off'); elStatusDot.classList.replace('bg-green-500', 'bg-slate-600');
+                elSlotLocal.appendChild(elMcp);
+                elMcp.style.marginBottom = '20px'; // Consistent spacing in local slot
+                elMcp.classList.add('system-off'); elStatusDot.classList.replace('bg-green-500', 'bg-slate-600');
             } else if (currentMode === 'remote') {
-                elSlotRemote.appendChild(elMcp); elMcp.classList.remove('system-off'); elStatusDot.classList.replace('bg-slate-600', 'bg-green-500');
+                elSlotRemote.appendChild(elMcp);
+                elMcp.classList.remove('system-off'); elStatusDot.classList.replace('bg-slate-600', 'bg-green-500');
             } else if (currentMode === 'monolith') {
                 const backend = document.getElementById('sys-backend'); backend.style.position = 'relative'; backend.style.overflow = 'visible';
                 elMcp.style.position = 'absolute'; elMcp.style.left = '-38px'; elMcp.style.top = '0'; elMcp.style.bottom = '0'; elMcp.style.height = '100%';
@@ -867,14 +907,12 @@
         }
 
         function updateControls() {
-            // Re-fetch icon references to ensure they are current (Lucide might replace elements)
             const iconPlay = document.getElementById('icon-play');
             const iconPause = document.getElementById('icon-pause');
 
             btnPrev.disabled = currentStep < 0 || isAnimating || isAutoPlaying;
             btnNext.disabled = currentStep >= 5 || isAnimating || isAutoPlaying;
 
-            // Play Button Icon State
             if (isAutoPlaying) {
                 if (iconPlay) iconPlay.classList.add('hidden');
                 if (iconPause) iconPause.classList.remove('hidden');
@@ -890,8 +928,6 @@
             if (currentStep >= 5) {
                 btnPlay.disabled = true;
             } else {
-                // IMPORTANT: When auto-playing, button MUST be enabled to allow pause.
-                // When manual stepping (isAnimating but not auto), disable play to prevent conflict.
                 btnPlay.disabled = isAnimating && !isAutoPlaying;
             }
 
@@ -910,61 +946,48 @@
             currentStep = -1; isAutoPlaying = false;
             elLog.innerHTML = '<div class="text-slate-600 italic">// Warten auf User Input...</div>'; elChat.innerHTML = '';
             hideBadges(); placeMcpServer();
-
-            // Clear styles on components
             document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.thinking').forEach(el => el.classList.remove('thinking'));
             elMcp.classList.remove('processing');
-
             updateControls();
         }
 
         async function nextStep() {
             if (isAnimating || currentStep >= 5) return;
             currentStep++; isAnimating = true;
-            updateControls(); // Update buttons immediately
-
+            updateControls();
             await steps[currentStep].action();
-
             isAnimating = false;
-            updateControls(); // Re-enable
+            updateControls();
         }
 
         function prevStep() {
             if (isAnimating || isAutoPlaying || currentStep < 0) return;
-
             const elements = document.querySelectorAll(`[data-step="${currentStep}"]`);
             elements.forEach(el => el.remove());
-
             hideBadges();
             document.querySelectorAll('.active').forEach(e => e.classList.remove('active'));
-
             currentStep--;
             updateControls();
         }
 
         async function togglePlay() {
-            // Prevent starting play if manual step is in progress
             if (isAnimating && !isAutoPlaying) return;
-
             if (isAutoPlaying) {
                 isAutoPlaying = false;
                 updateControls();
             } else {
                 isAutoPlaying = true;
                 updateControls();
-
                 while (isAutoPlaying && currentStep < 5) {
                     await nextStep();
                     if (isAutoPlaying && currentStep < 5) await wait(800);
                 }
-
                 isAutoPlaying = false;
                 updateControls();
             }
         }
 
-        // Draw Connections
         function drawConnections() {
             const svg = svgLayer; svg.innerHTML = '';
             const containerRect = elDiagram.getBoundingClientRect();
@@ -974,8 +997,6 @@
                 if (!el || el.offsetParent === null) return { x: 0, y: 0 };
                 const rect = el.getBoundingClientRect();
 
-                // IMPORTANT: Scale back to 1.0 logic to get internal layout coordinates
-                // We use currentScale variable which is kept in sync with the transform
                 const relLeft = (rect.left - containerRect.left) / currentScale;
                 const relTop = (rect.top - containerRect.top) / currentScale;
                 const width = rect.width / currentScale;
@@ -1012,6 +1033,7 @@
 
             const pChat = drawLine(userRight, clientLeft, 'standard');
             elChat.style.left = `${pChat.x - 70}px`; elChat.style.top = `${pChat.y - 15}px`;
+
             drawLine(clientRight, modelLeft, 'model');
 
             let pMcpConn;
@@ -1038,14 +1060,15 @@
 
         function addChatMessage(text, type) {
             const bubble = document.createElement('div'); bubble.className = `chat-bubble ${type === 'user' ? 'chat-user' : 'chat-agent'}`; bubble.innerText = text;
-            bubble.dataset.step = currentStep; // Tag for removal
+            bubble.dataset.step = currentStep;
             elChat.appendChild(bubble);
         }
 
         function animatePacket(fromId, toId, color, fromSide = 'right', toSide = 'left') {
             return new Promise(resolve => {
-                if (!isAnimating && !isAutoPlaying) { resolve(); return; } // Safety break
+                if (!isAnimating && !isAutoPlaying) { resolve(); return; }
                 drawConnections();
+
                 const fromEl = document.getElementById(fromId);
                 const toEl = document.getElementById(toId);
                 const containerRect = elDiagram.getBoundingClientRect();
@@ -1053,16 +1076,19 @@
                 const rectTo = toEl.getBoundingClientRect();
 
                 const getRelativeCoord = (rect, side) => {
-                    const relLeft = (rect.left - containerRect.left) / currentScale;
-                    const relTop = (rect.top - containerRect.top) / currentScale;
-                    const width = rect.width / currentScale;
-                    const height = rect.height / currentScale;
-                    const centerY = relTop + height / 2; const centerX = relLeft + width / 2;
-                    if (side === 'left') return { x: relLeft, y: centerY };
-                    if (side === 'right') return { x: relLeft + width, y: centerY };
-                    if (side === 'top') return { x: centerX, y: relTop };
-                    if (side === 'bottom') return { x: centerX, y: relTop + height };
-                    return { x: centerX, y: centerY };
+                    const visLeft = rect.left - containerRect.left;
+                    const visTop = rect.top - containerRect.top;
+                    const x = visLeft / currentScale;
+                    const y = visTop / currentScale;
+                    const w = rect.width / currentScale;
+                    const h = rect.height / currentScale;
+                    const cx = x + w / 2; const cy = y + h / 2;
+
+                    if (side === 'left') return { x: x, y: cy };
+                    if (side === 'right') return { x: x + w, y: cy };
+                    if (side === 'top') return { x: cx, y: y };
+                    if (side === 'bottom') return { x: cx, y: y + h };
+                    return { x: cx, y: cy };
                 };
 
                 const startP = getRelativeCoord(rectFrom, fromSide);
@@ -1100,7 +1126,7 @@
             if (type === 'sys') { colorClass = "text-purple-300 italic"; borderClass = "border-purple-500"; }
             if (type === 'info') { colorClass = "text-white font-bold"; borderClass = "border-slate-500"; }
             row.className = `py-1 ${colorClass} border-l-2 ${borderClass} pl-2`;
-            row.dataset.step = currentStep; // Tag for removal
+            row.dataset.step = currentStep;
             row.innerText = `> ${msg}`;
             elLog.appendChild(row); elLog.scrollTop = elLog.scrollHeight;
         }
@@ -1117,7 +1143,7 @@
                 container.addEventListener('mouseenter', () => showGlobalTooltip(summary, detailJson));
                 container.addEventListener('mouseleave', hideGlobalTooltip);
             }
-            container.dataset.step = currentStep; // Tag for removal
+            container.dataset.step = currentStep;
             container.innerHTML = `<i data-lucide="${icon}" size="14" class="${colorClass}"></i><span class="${colorClass} truncate flex-grow font-medium">${summary}</span>${detailJson ? `<i data-lucide="search" size="16" class="text-slate-500 group-hover:text-white transition-colors"></i>` : ''}`;
             elLog.appendChild(container); lucide.createIcons(); elLog.scrollTop = elLog.scrollHeight;
         }
@@ -1141,6 +1167,7 @@
             updateTransform();
             // Force redraw after a tick to ensure layout is settled
             setTimeout(drawConnections, 100);
+            updateControls();
         }
         init();
 
